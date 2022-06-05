@@ -1,39 +1,38 @@
 package data
 
-type EnumType struct {
-	Elems []EnumElem
-}
+import (
+	"fmt"
 
-type EnumElem struct {
-	Name string
-	Type Type
-}
+	"github.com/gordonklaus/data/types"
+)
 
 type EnumValue struct {
-	Type  *EnumType
+	Type  *types.EnumType
 	Elem  int
 	Value Value
 }
 
-// func (e *Enum) WriteTo(w io.Writer) (int64, error) {
-// 	var c counterr
-// 	if !c.write(w, e.Elem) {
-// 		return c.error
-// 	}
-// 	if !c.write(w, e.Value) {
-// 		return c.error
-// 	}
-// 	return c.error
-// }
+func NewEnumValue(t *types.EnumType) *EnumValue {
+	return &EnumValue{
+		Type:  t,
+		Elem:  0,
+		Value: NewValue(t.Elems[0].Type),
+	}
+}
 
-// func (e *Enum) ReadFrom(r io.Reader) (int64, error) {
-// 	var c counterr
-// 	if !c.read(r, e.Elem) {
-// 		return c.error
-// 	}
-// 	e.Value = e.Type.Elems[e.Elem].Type.NewValue()
-// 	if !c.read(r, e.Value) {
-// 		return c.error
-// 	}
-// 	return c.error
-// }
+func (e *Encoder) EncodeEnumValue(en *EnumValue) error {
+	_ = e.writeBinary(en.Elem) || e.encodeValue(en.Value)
+	return e.err
+}
+
+func (d *Decoder) DecodeEnumValue(e *EnumValue) error {
+	if !d.readBinary(&e.Elem) {
+		return d.err
+	}
+	if e.Elem < 0 || e.Elem >= len(e.Type.Elems) {
+		return fmt.Errorf("enum index out of range: %d", e.Elem)
+	}
+	e.Value = NewValue(e.Type.Elems[e.Elem].Type)
+	d.decodeValue(e.Value)
+	return d.err
+}

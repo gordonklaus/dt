@@ -2,20 +2,20 @@ package main
 
 import (
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data"
+	"github.com/gordonklaus/data/types"
 )
 
 type TypeName struct {
-	typ *data.NamedType
+	typ *types.NamedType
 }
 
-func NewTypeName(typ *data.NamedType) *TypeName {
+func NewTypeName(typ *types.NamedType) *TypeName {
 	return &TypeName{
 		typ: typ,
 	}
 }
 
-func (n *TypeName) Type() data.Type { return n.typ }
+func (n *TypeName) Type() types.Type { return n.typ }
 
 func (n *TypeName) Layout(gtx C) D {
 	return material.Body1(theme, n.typ.Name).Layout(gtx)

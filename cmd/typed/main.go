@@ -9,7 +9,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data"
+	"github.com/gordonklaus/data/types"
 )
 
 func main() {
@@ -25,7 +25,7 @@ var theme = material.NewTheme(gofont.Collection())
 func Main() {
 	w := app.NewWindow(app.Title("typEd"))
 
-	ed := NewNamedTypeEditor(&data.NamedType{})
+	ed := NewNamedTypeEditor(&types.NamedType{})
 
 	var ops op.Ops
 	for e := range w.Events() {
@@ -33,7 +33,7 @@ func Main() {
 		case system.FrameEvent:
 			ops.Reset()
 			gtx := layout.NewContext(&ops, e)
-			ed.Layout(gtx)
+			layout.Center.Layout(gtx, ed.Layout)
 			e.Frame(&ops)
 		case system.DestroyEvent:
 			if e.Err != nil {

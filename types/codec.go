@@ -1,4 +1,4 @@
-package data
+package types
 
 import (
 	"encoding/binary"
@@ -23,13 +23,13 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{r: r}
 }
 
-func (e *Encoder) encodeValue(v Value) bool {
-	e.err = e.EncodeValue(v)
+func (e *Encoder) encodeType(t Type) bool {
+	e.err = e.EncodeType(t)
 	return e.err == nil
 }
 
-func (d *Decoder) decodeValue(v Value) bool {
-	d.err = d.DecodeValue(v)
+func (d *Decoder) decodeType(t *Type) bool {
+	d.err = d.DecodeType(t)
 	return d.err == nil
 }
 

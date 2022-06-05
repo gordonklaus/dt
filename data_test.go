@@ -4,22 +4,23 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
-)
 
-func TestType(t *testing.T) {
-	testValue(t,
-		&StructType{Fields: []*StructFieldType{
-			{Name: "x", Type: NewBasicType(Int64)},
-			{Name: "y", Type: NewBasicType(Int64)},
-		}},
-		&StructType{},
-	)
-}
+	"github.com/gordonklaus/data/types"
+)
 
 func TestValue(t *testing.T) {
 	testValue(t,
 		newInt64(42),
 		newInt64(0),
+	)
+	at := &types.ArrayType{Elem: &types.BasicType{Kind: types.Int64}}
+	testValue(t,
+		&ArrayValue{Type: at, Elems: []Value{
+			newInt64(1),
+			newInt64(2),
+			newInt64(3),
+		}},
+		&ArrayValue{Type: at},
 	)
 	testValue(t,
 		&StructValue{Fields: []*StructFieldValue{
@@ -33,7 +34,7 @@ func TestValue(t *testing.T) {
 	)
 }
 
-func newInt64(i int64) *BasicValue { return NewBasicValue(&i) }
+func newInt64(i int64) *BasicValue { return &BasicValue{X: &i} }
 
 func testValue(t *testing.T, src, dst Value) {
 	var b bytes.Buffer

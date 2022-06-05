@@ -1,6 +1,8 @@
 package data
 
+import "github.com/gordonklaus/data/types"
+
 type Any struct {
-	Type  Type
+	Type  types.Type
 	Value Value
 }

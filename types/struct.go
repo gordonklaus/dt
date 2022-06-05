@@ -1,4 +1,4 @@
-package data
+package types
 
 type StructType struct {
 	Fields []*StructFieldType
@@ -12,10 +12,6 @@ func (e *Encoder) EncodeStructType(s *StructType) error {
 func (d *Decoder) DecodeStructType(s *StructType) error {
 	readSlice(d, d.DecodeStructFieldType, &s.Fields)
 	return d.err
-}
-
-func (s *StructType) NewValue() Value {
-	return &StructValue{}
 }
 
 type StructFieldType struct {

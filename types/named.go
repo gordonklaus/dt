@@ -1,4 +1,4 @@
-package data
+package types
 
 type NamedType struct {
 	Name string
@@ -14,5 +14,3 @@ func (d *Decoder) DecodeNamedType(n *NamedType) error {
 	_ = d.readString(&n.Name) && d.decodeType(&n.Type)
 	return d.err
 }
-
-func (n *NamedType) NewValue() Value { return n.Type.NewValue() }
