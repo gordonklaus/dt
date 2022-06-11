@@ -16,18 +16,18 @@ func TestType(t *testing.T) {
 		&ArrayType{},
 	)
 	testType(t,
-		&StructType{Fields: []*StructFieldType{
-			{Name: "x", Type: NewBasicType(Int64)},
-			{Name: "y", Type: NewBasicType(Int64)},
-		}},
-		&StructType{},
-	)
-	testType(t,
 		&EnumType{Elems: []*EnumElemType{
 			{Name: "x", Type: NewBasicType(Float64)},
 			{Name: "y", Type: NewBasicType(Bool)},
 		}},
 		&EnumType{},
+	)
+	testType(t,
+		&StructType{Fields: []*StructFieldType{
+			{Name: "x", Type: NewBasicType(Int64)},
+			{Name: "y", Type: NewBasicType(Int64)},
+		}},
+		&StructType{},
 	)
 	testType(t,
 		&NamedType{

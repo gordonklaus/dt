@@ -10,14 +10,13 @@ type Type interface {
 
 func (*BasicType) isType()  {}
 func (*ArrayType) isType()  {}
-func (*StructType) isType() {}
 func (*EnumType) isType()   {}
+func (*StructType) isType() {}
 func (*NamedType) isType()  {}
 
 type Kind uint8
 
 const (
-	// Basic kinds
 	Bool Kind = iota
 	Int
 	Int8
@@ -34,8 +33,8 @@ const (
 	String
 
 	Array
-	Struct
 	Enum
+	Struct
 	Named
 )
 
@@ -71,10 +70,10 @@ func (k Kind) String() string {
 		return "string"
 	case Array:
 		return "array"
-	case Struct:
-		return "struct"
 	case Enum:
 		return "enum"
+	case Struct:
+		return "struct"
 	case Named:
 		return "named"
 	}
@@ -91,10 +90,10 @@ func (e *Encoder) EncodeType(t Type) error {
 		return nil
 	case *ArrayType:
 		return e.EncodeArrayType(t)
-	case *StructType:
-		return e.EncodeStructType(t)
 	case *EnumType:
 		return e.EncodeEnumType(t)
+	case *StructType:
+		return e.EncodeStructType(t)
 	case *NamedType:
 		return e.EncodeNamedType(t)
 	}
@@ -108,10 +107,10 @@ func kind(t Type) Kind {
 		return t.Kind
 	case *ArrayType:
 		return Array
-	case *StructType:
-		return Struct
 	case *EnumType:
 		return Enum
+	case *StructType:
+		return Struct
 	case *NamedType:
 		return Named
 	}
@@ -133,14 +132,14 @@ func (d *Decoder) DecodeType(t *Type) error {
 		at := &ArrayType{}
 		*t = at
 		return d.DecodeArrayType(at)
-	case Struct:
-		st := &StructType{}
-		*t = st
-		return d.DecodeStructType(st)
 	case Enum:
 		et := &EnumType{}
 		*t = et
 		return d.DecodeEnumType(et)
+	case Struct:
+		st := &StructType{}
+		*t = st
+		return d.DecodeStructType(st)
 	case Named:
 		nt := &NamedType{}
 		*t = nt
