@@ -25,7 +25,16 @@ var theme = material.NewTheme(gofont.Collection())
 func Main() {
 	w := app.NewWindow(app.Title("typEd"))
 
-	ed := NewNamedTypeEditor(&types.NamedType{})
+	ed := NewNamedTypeEditor(&types.NamedType{
+		Name: "person",
+		Type: &types.StructType{
+			Fields: []*types.StructFieldType{
+				{Name: "id", Type: types.NewBasicType(types.Uint64)},
+				{Name: "name", Type: types.NewBasicType(types.String)},
+				{Name: "age", Type: types.NewBasicType(types.Int)},
+			},
+		},
+	})
 
 	var ops op.Ops
 	for e := range w.Events() {

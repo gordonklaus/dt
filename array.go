@@ -16,7 +16,7 @@ func NewArrayValue(t *types.ArrayType) *ArrayValue {
 }
 
 func (e *Encoder) EncodeArrayValue(a *ArrayValue) error {
-	if !e.writeBinary(int64(len(a.Elems))) {
+	if !e.writeBinary(uint(len(a.Elems))) {
 		return e.err
 	}
 	for _, v := range a.Elems {
@@ -28,7 +28,7 @@ func (e *Encoder) EncodeArrayValue(a *ArrayValue) error {
 }
 
 func (d *Decoder) DecodeArrayValue(a *ArrayValue) error {
-	var len int64
+	var len uint
 	if !d.readBinary(&len) {
 		return d.err
 	}
