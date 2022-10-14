@@ -25,24 +25,41 @@ func NewStructValue(t *types.StructType) *StructValue {
 	for i, f := range t.Fields {
 		s.Fields[i] = &StructFieldValue{
 			StructFieldType: f,
+			Value:           NewValue(f.Type),
 		}
 	}
 	return s
 }
 
 func (e *Encoder) EncodeStructValue(s *StructValue) error {
-	var fields uint
+	var bits Bits
 	var buf bytes.Buffer
 	e2 := NewEncoder(&buf)
-	for i, f := range s.Fields {
-		if f.Value != nil {
-			fields |= 1 << i
-			if !e2.encodeValue(f.Value) {
+	for _, f := range s.Fields {
+		switch v := f.Value.(type) {
+		case *BasicValue:
+			if x, ok := v.X.(bool); ok {
+				bits.AppendBit(x)
+				continue
+			}
+		case *OptionValue:
+			bits.AppendBit(v.Value != nil)
+			if v, ok := v.Value.(*BasicValue); ok {
+				if x, ok := v.X.(bool); ok {
+					bits.AppendBit(x)
+					continue
+				}
+			}
+			if !e2.encodeValue(v) {
 				return e2.err
 			}
+			continue
+		}
+		if !e2.encodeValue(f.Value) {
+			return e2.err
 		}
 	}
-	_ = e.writeBinary(fields) && e.writeBinary(uint(buf.Len())) && e.writeBinary(buf.Bytes())
+	_ = e.writeBinary(bits.b) && e.writeBinary(uint(buf.Len())) && e.writeBinary(buf.Bytes())
 	return e.err
 }
 
@@ -55,7 +72,6 @@ func (d *Decoder) DecodeStructValue(s *StructValue) error {
 	d2 := NewDecoder(lr)
 	for i, f := range s.Fields {
 		if fields&(1<<i) != 0 {
-			f.Value = NewValue(f.Type)
 			if !d2.decodeValue(f.Value) {
 				return d2.err
 			}

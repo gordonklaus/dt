@@ -10,6 +10,7 @@ type Value interface {
 	isValue()
 }
 
+func (*OptionValue) isValue() {}
 func (*BasicValue) isValue()  {}
 func (*ArrayValue) isValue()  {}
 func (*StructValue) isValue() {}

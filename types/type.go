@@ -8,6 +8,7 @@ type Type interface {
 	isType()
 }
 
+func (*OptionType) isType() {}
 func (*BasicType) isType()  {}
 func (*ArrayType) isType()  {}
 func (*EnumType) isType()   {}
