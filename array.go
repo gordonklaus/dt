@@ -16,7 +16,8 @@ func NewArrayValue(t *types.ArrayType) *ArrayValue {
 }
 
 func (e *Encoder) EncodeArrayValue(a *ArrayValue) error {
-	if !e.writeBinary(uint(len(a.Elems))) {
+	len := uint(len(a.Elems))
+	if !e.writeBinary(&len) {
 		return e.err
 	}
 	for _, v := range a.Elems {

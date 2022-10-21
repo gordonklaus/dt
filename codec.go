@@ -58,11 +58,11 @@ func (d *Decoder) readString(s *string) bool {
 func (e *Encoder) writeBinary(x any) bool {
 	var buf [binary.MaxVarintLen64]byte
 	switch x := x.(type) {
-	case int:
-		n := binary.PutVarint(buf[:], int64(x))
+	case *int:
+		n := binary.PutVarint(buf[:], int64(*x))
 		e.writeBinary(buf[:n])
-	case uint:
-		n := binary.PutUvarint(buf[:], uint64(x))
+	case *uint:
+		n := binary.PutUvarint(buf[:], uint64(*x))
 		e.writeBinary(buf[:n])
 	default:
 		e.err = binary.Write(e.w, binary.LittleEndian, x)

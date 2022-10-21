@@ -20,15 +20,7 @@ type Kind uint8
 const (
 	Bool Kind = iota
 	Int
-	Int8
-	Int16
-	Int32
-	Int64
 	Uint
-	Uint8
-	Uint16
-	Uint32
-	Uint64
 	Float32
 	Float64
 	String
@@ -45,24 +37,8 @@ func (k Kind) String() string {
 		return "bool"
 	case Int:
 		return "int"
-	case Int8:
-		return "int8"
-	case Int16:
-		return "int16"
-	case Int32:
-		return "int32"
-	case Int64:
-		return "int64"
 	case Uint:
 		return "uint"
-	case Uint8:
-		return "uint8"
-	case Uint16:
-		return "uint16"
-	case Uint32:
-		return "uint32"
-	case Uint64:
-		return "uint64"
 	case Float32:
 		return "float32"
 	case Float64:

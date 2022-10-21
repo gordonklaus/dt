@@ -8,7 +8,7 @@ import (
 
 func TestType(t *testing.T) {
 	testType(t,
-		NewBasicType(Int64),
+		NewBasicType(Int),
 		&BasicType{},
 	)
 	testType(t,
@@ -24,15 +24,15 @@ func TestType(t *testing.T) {
 	)
 	testType(t,
 		&StructType{Fields: []*StructFieldType{
-			{Name: "x", Type: NewBasicType(Int64)},
-			{Name: "y", Type: NewBasicType(Int64)},
+			{Name: "x", Type: NewBasicType(Int)},
+			{Name: "y", Type: NewBasicType(Int)},
 		}},
 		&StructType{},
 	)
 	testType(t,
 		&NamedType{
 			Name: "Bob",
-			Type: NewBasicType(Uint16),
+			Type: NewBasicType(Uint),
 		},
 		&NamedType{},
 	)

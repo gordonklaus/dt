@@ -9,46 +9,46 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	testValue(t, newInt64(42), newInt64(0))
+	testValue(t, newInt(42), newInt(0))
 }
 
 func TestArray(t *testing.T) {
-	at := &types.ArrayType{Elem: &types.BasicType{Kind: types.Int64}}
+	at := &types.ArrayType{Elem: &types.BasicType{Kind: types.Int}}
 	testValue(t,
-		&ArrayValue{Type: at, Elems: []Value{newInt64(1), newInt64(2), newInt64(3)}},
+		&ArrayValue{Type: at, Elems: []Value{newInt(1), newInt(2), newInt(3)}},
 		NewValue(at),
 	)
 }
 
 func TestStruct(t *testing.T) {
 	st := &types.StructType{Fields: []*types.StructFieldType{
-		{Type: &types.BasicType{Kind: types.Int64}},
-		{Type: &types.BasicType{Kind: types.Int64}},
+		{Type: &types.BasicType{Kind: types.Int}},
+		{Type: &types.BasicType{Kind: types.Int}},
 	}}
 
 	sv := NewValue(st).(*StructValue)
-	sv.Fields[0].Value = newInt64(3)
-	sv.Fields[1].Value = newInt64(7)
+	sv.Fields[0].Value = newInt(3)
+	sv.Fields[1].Value = newInt(7)
 	testValue(t, sv, NewValue(st))
 
 	sv = NewValue(st).(*StructValue)
-	sv.Fields[1].Value = newInt64(5)
+	sv.Fields[1].Value = newInt(5)
 	testValue(t, sv, NewValue(st))
 
 	testValue(t, NewValue(st), NewValue(st))
 
 	sv = NewValue(st).(*StructValue)
 	sv.Fields = append(sv.Fields, &StructFieldValue{
-		StructFieldType: &types.StructFieldType{Type: &types.BasicType{Kind: types.Int64}},
-		Value:           newInt64(9),
+		StructFieldType: &types.StructFieldType{Type: &types.BasicType{Kind: types.Int}},
+		Value:           newInt(9),
 	})
-	sv.Fields[1].Value = newInt64(5)
+	sv.Fields[1].Value = newInt(5)
 	expect := NewValue(st).(*StructValue)
-	expect.Fields[1].Value = newInt64(5)
+	expect.Fields[1].Value = newInt(5)
 	testValueExpect(t, sv, NewValue(st), expect)
 }
 
-func newInt64(i int64) *BasicValue { return &BasicValue{X: &i} }
+func newInt(i int) *BasicValue { return &BasicValue{X: &i} }
 
 func testValue(t *testing.T, src, dst Value) {
 	testValueExpect(t, src, dst, src)
