@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/gordonklaus/data/bits"
 	"github.com/gordonklaus/data/types"
 )
 
@@ -15,30 +16,24 @@ func NewArrayValue(t *types.ArrayType) *ArrayValue {
 	}
 }
 
-func (e *Encoder) EncodeArrayValue(a *ArrayValue) error {
-	len := uint(len(a.Elems))
-	if !e.writeBinary(&len) {
-		return e.err
-	}
+func (a *ArrayValue) Write(b *bits.Buffer) {
+	b.WriteVarUint(uint64(len(a.Elems)))
 	for _, v := range a.Elems {
-		if !e.encodeValue(v) {
-			return e.err
-		}
+		v.Write(b)
 	}
-	return e.err
 }
 
-func (d *Decoder) DecodeArrayValue(a *ArrayValue) error {
-	var len uint
-	if !d.readBinary(&len) {
-		return d.err
+func (a *ArrayValue) Read(b *bits.Buffer) error {
+	len, err := b.ReadVarUint()
+	if err != nil {
+		return err
 	}
 	a.Elems = make([]Value, len)
 	for i := range a.Elems {
 		a.Elems[i] = NewValue(a.Type.Elem)
-		if !d.decodeValue(a.Elems[i]) {
-			return d.err
+		if err := a.Elems[i].Read(b); err != nil {
+			return err
 		}
 	}
-	return d.err
+	return nil
 }

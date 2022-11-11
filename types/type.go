@@ -2,32 +2,30 @@ package types
 
 import (
 	"fmt"
+
+	"github.com/gordonklaus/data/bits"
 )
 
 type Type interface {
-	isType()
+	Write(*bits.Buffer)
+	Read(*bits.Buffer) error
 }
 
-func (*OptionType) isType() {}
-func (*BasicType) isType()  {}
-func (*ArrayType) isType()  {}
-func (*EnumType) isType()   {}
-func (*StructType) isType() {}
-func (*NamedType) isType()  {}
-
-type Kind uint8
+type Kind uint64
 
 const (
 	Bool Kind = iota
-	Int
 	Uint
+	Int
 	Float32
 	Float64
-	String
 
-	Array
 	Enum
 	Struct
+	Array
+
+	Option
+	String
 	Named
 )
 
@@ -35,92 +33,103 @@ func (k Kind) String() string {
 	switch k {
 	case Bool:
 		return "bool"
-	case Int:
-		return "int"
 	case Uint:
 		return "uint"
+	case Int:
+		return "int"
 	case Float32:
 		return "float32"
 	case Float64:
 		return "float64"
-	case String:
-		return "string"
-	case Array:
-		return "array"
+
 	case Enum:
 		return "enum"
 	case Struct:
 		return "struct"
+	case Array:
+		return "array"
+
+	case Option:
+		return "option"
+	case String:
+		return "string"
 	case Named:
 		return "named"
 	}
 	return fmt.Sprintf("Kind(%d)", k)
 }
 
-func (e *Encoder) EncodeType(t Type) error {
-	if !e.writeBinary(kind(t)) {
-		return e.err
-	}
-
-	switch t := t.(type) {
-	case *BasicType:
-		return nil
-	case *ArrayType:
-		return e.EncodeArrayType(t)
-	case *EnumType:
-		return e.EncodeEnumType(t)
-	case *StructType:
-		return e.EncodeStructType(t)
-	case *NamedType:
-		return e.EncodeNamedType(t)
-	}
-
-	return e.err
+func WriteType(b *bits.Buffer, t Type) {
+	b.WriteVarUint_4bit(uint64(kind(t)))
+	t.Write(b)
 }
 
 func kind(t Type) Kind {
-	switch t := t.(type) {
-	case *BasicType:
-		return t.Kind
-	case *ArrayType:
-		return Array
+	switch t.(type) {
+	case *BoolType:
+		return Bool
+	case *UintType:
+		return Uint
+	case *IntType:
+		return Int
+	case *Float32Type:
+		return Float32
+	case *Float64Type:
+		return Float64
+
 	case *EnumType:
 		return Enum
 	case *StructType:
 		return Struct
+	case *ArrayType:
+		return Array
+
+	case *OptionType:
+		return Option
+	case *StringType:
+		return String
 	case *NamedType:
 		return Named
 	}
 	panic(fmt.Sprintf("no Kind for Type %T", t))
 }
 
-func (d *Decoder) DecodeType(t *Type) error {
-	var kind Kind
-	if !d.readBinary(&kind) {
-		return d.err
+func ReadType(b *bits.Buffer, t *Type) error {
+	k, err := b.ReadVarUint_4bit()
+	if err != nil {
+		return err
 	}
 
-	if kind >= Bool && kind <= String {
-		*t = &BasicType{Kind: kind}
-		return nil
-	}
-	switch kind {
-	case Array:
-		at := &ArrayType{}
-		*t = at
-		return d.DecodeArrayType(at)
+	*t = NewType(Kind(k))
+	return (*t).Read(b)
+}
+
+func NewType(k Kind) Type {
+	switch k {
+	case Bool:
+		return &BoolType{}
+	case Uint:
+		return &UintType{}
+	case Int:
+		return &IntType{}
+	case Float32:
+		return &Float32Type{}
+	case Float64:
+		return &Float64Type{}
+
 	case Enum:
-		et := &EnumType{}
-		*t = et
-		return d.DecodeEnumType(et)
+		return &EnumType{}
 	case Struct:
-		st := &StructType{}
-		*t = st
-		return d.DecodeStructType(st)
+		return &StructType{}
+	case Array:
+		return &ArrayType{}
+
+	case Option:
+		return &OptionType{}
+	case String:
+		return &StringType{}
 	case Named:
-		nt := &NamedType{}
-		*t = nt
-		return d.DecodeNamedType(nt)
+		return &NamedType{}
 	}
-	panic(fmt.Sprintf("unknown Kind %d", kind))
+	panic(fmt.Sprintf("unknown Kind %d", k))
 }

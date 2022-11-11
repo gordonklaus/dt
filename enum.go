@@ -1,14 +1,13 @@
 package data
 
 import (
-	"fmt"
-
+	"github.com/gordonklaus/data/bits"
 	"github.com/gordonklaus/data/types"
 )
 
 type EnumValue struct {
 	Type  *types.EnumType
-	Elem  int
+	Elem  uint64
 	Value Value
 }
 
@@ -20,19 +19,33 @@ func NewEnumValue(t *types.EnumType) *EnumValue {
 	}
 }
 
-func (e *Encoder) EncodeEnumValue(en *EnumValue) error {
-	_ = e.writeBinary(en.Elem) || e.encodeValue(en.Value)
-	return e.err
+func (e *EnumValue) Write(b *bits.Buffer) {
+	b.WriteVarUint_4bit(e.Elem)
+	if s, ok := e.Value.(*StructValue); ok {
+		// Struct values already include their size.
+		s.Write(b)
+	} else {
+		b.WriteSize(func() { e.Value.Write(b) })
+	}
 }
 
-func (d *Decoder) DecodeEnumValue(e *EnumValue) error {
-	if !d.readBinary(&e.Elem) {
-		return d.err
+func (e *EnumValue) Read(b *bits.Buffer) error {
+	var err error
+	if e.Elem, err = b.ReadVarUint_4bit(); err != nil {
+		return err
 	}
-	if e.Elem < 0 || e.Elem >= len(e.Type.Elems) {
-		return fmt.Errorf("enum index out of range: %d", e.Elem)
+	if e.Elem < uint64(len(e.Type.Elems)) {
+		e.Value = NewValue(e.Type.Elems[e.Elem].Type)
+	} else {
+		e.Value = &UnknownEnumElement{}
 	}
-	e.Value = NewValue(e.Type.Elems[e.Elem].Type)
-	d.decodeValue(e.Value)
-	return d.err
+	if s, ok := e.Value.(*StructValue); ok {
+		return s.Read(b)
+	}
+	return b.ReadSize(func() error { return e.Value.Read(b) })
 }
+
+type UnknownEnumElement struct{}
+
+func (*UnknownEnumElement) Write(b *bits.Buffer)      {}
+func (*UnknownEnumElement) Read(b *bits.Buffer) error { return nil }

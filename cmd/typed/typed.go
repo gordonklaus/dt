@@ -39,8 +39,10 @@ func NewTypeEditor(typ *types.Type) *TypeEditor {
 	}
 
 	switch typ := (*typ).(type) {
-	case *types.BasicType:
-		t.ed = NewBasic(typ)
+	case *types.IntType, *types.UintType:
+		t.ed = NewIntTypeEditor(typ)
+	case *types.StringType:
+		t.ed = NewStringTypeEditor(typ)
 	case *types.StructType:
 		t.ed = NewStructTypeEditor(typ)
 	}
@@ -91,7 +93,7 @@ func (t *TypeEditor) Layout(gtx C) D {
 func (t *TypeEditor) itemClicked() typeEditor {
 	switch {
 	case t.items.int.Clicked():
-		return NewBasic(types.NewBasicType(types.Int))
+		return NewIntTypeEditor(&types.IntType{Size: 64})
 	case t.items.strct.Clicked():
 		return NewStructTypeEditor(&types.StructType{})
 	}

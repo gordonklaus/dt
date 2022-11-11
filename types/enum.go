@@ -1,17 +1,35 @@
 package types
 
+import "github.com/gordonklaus/data/bits"
+
 type EnumType struct {
 	Elems []*EnumElemType
 }
 
-func (e *Encoder) EncodeEnumType(en *EnumType) error {
-	writeSlice(e, e.EncodeEnumElemType, en.Elems)
-	return e.err
+func (e *EnumType) Write(b *bits.Buffer) {
+	b.WriteSize(func() {
+		b.WriteVarUint(uint64(len(e.Elems)))
+		for _, el := range e.Elems {
+			el.Write(b)
+		}
+	})
 }
 
-func (d *Decoder) DecodeEnumType(e *EnumType) error {
-	readSlice(d, d.DecodeEnumElemType, &e.Elems)
-	return d.err
+func (e *EnumType) Read(b *bits.Buffer) error {
+	return b.ReadSize(func() error {
+		len, err := b.ReadVarUint()
+		if err != nil {
+			return err
+		}
+		e.Elems = make([]*EnumElemType, len)
+		for i := range e.Elems {
+			e.Elems[i] = &EnumElemType{}
+			if err := e.Elems[i].Read(b); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 type EnumElemType struct {
@@ -19,12 +37,18 @@ type EnumElemType struct {
 	Type Type
 }
 
-func (e *Encoder) EncodeEnumElemType(f *EnumElemType) error {
-	_ = e.writeString(f.Name) && e.encodeType(f.Type)
-	return e.err
+func (e *EnumElemType) Write(b *bits.Buffer) {
+	b.WriteSize(func() {
+		b.WriteString(e.Name)
+		WriteType(b, e.Type)
+	})
 }
 
-func (d *Decoder) DecodeEnumElemType(f *EnumElemType) error {
-	_ = d.readString(&f.Name) && d.decodeType(&f.Type)
-	return d.err
+func (e *EnumElemType) Read(b *bits.Buffer) error {
+	return b.ReadSize(func() error {
+		if err := b.ReadString(&e.Name); err != nil {
+			return err
+		}
+		return ReadType(b, &e.Type)
+	})
 }

@@ -29,9 +29,9 @@ func Main() {
 		Name: "person",
 		Type: &types.StructType{
 			Fields: []*types.StructFieldType{
-				{Name: "id", Type: types.NewBasicType(types.Uint)},
-				{Name: "name", Type: types.NewBasicType(types.String)},
-				{Name: "age", Type: types.NewBasicType(types.Int)},
+				{Name: "id", Type: &types.UintType{Size: 64}},
+				{Name: "name", Type: &types.StringType{}},
+				{Name: "age", Type: &types.IntType{Size: 64}},
 			},
 		},
 	})

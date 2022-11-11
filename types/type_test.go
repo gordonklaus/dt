@@ -1,53 +1,57 @@
 package types
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
+
+	"github.com/gordonklaus/data/bits"
 )
 
 func TestType(t *testing.T) {
 	testType(t,
-		NewBasicType(Int),
-		&BasicType{},
+		newInt64Type(),
+		&IntType{},
 	)
 	testType(t,
-		&ArrayType{Elem: NewBasicType(String)},
+		&ArrayType{Elem: newStringType()},
 		&ArrayType{},
 	)
 	testType(t,
 		&EnumType{Elems: []*EnumElemType{
-			{Name: "x", Type: NewBasicType(Float64)},
-			{Name: "y", Type: NewBasicType(Bool)},
+			{Name: "x", Type: newFloat64Type()},
+			{Name: "y", Type: newBoolType()},
 		}},
 		&EnumType{},
 	)
 	testType(t,
 		&StructType{Fields: []*StructFieldType{
-			{Name: "x", Type: NewBasicType(Int)},
-			{Name: "y", Type: NewBasicType(Int)},
+			{Name: "x", Type: newInt64Type()},
+			{Name: "y", Type: newInt64Type()},
 		}},
 		&StructType{},
 	)
 	testType(t,
 		&NamedType{
 			Name: "Bob",
-			Type: NewBasicType(Uint),
+			Type: newInt64Type(),
 		},
 		&NamedType{},
 	)
 }
 
+func newBoolType() *BoolType       { return &BoolType{} }
+func newInt64Type() *IntType       { return &IntType{Size: 64} }
+func newFloat64Type() *Float64Type { return &Float64Type{} }
+func newStringType() *StringType   { return &StringType{} }
+
 func testType(t *testing.T, src, dst Type) {
-	var b bytes.Buffer
-	if err := NewEncoder(&b).EncodeType(src); err != nil {
+	b := bits.NewBuffer()
+	WriteType(b, src)
+	if err := ReadType(b, &dst); err != nil {
 		t.Fatal(err)
 	}
-	if err := NewDecoder(&b).DecodeType(&dst); err != nil {
-		t.Fatal(err)
-	}
-	if b.Len() > 0 {
-		t.Errorf("%d bytes left over", b.Len())
+	if b.Remaining() > 0 {
+		t.Errorf("%d bytes remaining", b.Remaining())
 	}
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("Types are not equal:\nsrc = %#v\ndst = %#v", src, dst)

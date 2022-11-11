@@ -1,17 +1,35 @@
 package types
 
+import "github.com/gordonklaus/data/bits"
+
 type StructType struct {
 	Fields []*StructFieldType
 }
 
-func (e *Encoder) EncodeStructType(s *StructType) error {
-	writeSlice(e, e.EncodeStructFieldType, s.Fields)
-	return e.err
+func (s *StructType) Write(b *bits.Buffer) {
+	b.WriteSize(func() {
+		b.WriteVarUint(uint64(len(s.Fields)))
+		for _, el := range s.Fields {
+			el.Write(b)
+		}
+	})
 }
 
-func (d *Decoder) DecodeStructType(s *StructType) error {
-	readSlice(d, d.DecodeStructFieldType, &s.Fields)
-	return d.err
+func (s *StructType) Read(b *bits.Buffer) error {
+	return b.ReadSize(func() error {
+		len, err := b.ReadVarUint()
+		if err != nil {
+			return err
+		}
+		s.Fields = make([]*StructFieldType, len)
+		for i := range s.Fields {
+			s.Fields[i] = &StructFieldType{}
+			if err := s.Fields[i].Read(b); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 type StructFieldType struct {
@@ -19,12 +37,18 @@ type StructFieldType struct {
 	Type Type
 }
 
-func (e *Encoder) EncodeStructFieldType(f *StructFieldType) error {
-	_ = e.writeString(f.Name) && e.encodeType(f.Type)
-	return e.err
+func (s *StructFieldType) Write(b *bits.Buffer) {
+	b.WriteSize(func() {
+		b.WriteString(s.Name)
+		WriteType(b, s.Type)
+	})
 }
 
-func (d *Decoder) DecodeStructFieldType(f *StructFieldType) error {
-	_ = d.readString(&f.Name) && d.decodeType(&f.Type)
-	return d.err
+func (s *StructFieldType) Read(b *bits.Buffer) error {
+	return b.ReadSize(func() error {
+		if err := b.ReadString(&s.Name); err != nil {
+			return err
+		}
+		return ReadType(b, &s.Type)
+	})
 }
