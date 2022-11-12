@@ -3,7 +3,6 @@ package main
 import (
 	"gioui.org/layout"
 	"gioui.org/op"
-	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/component"
@@ -66,8 +65,8 @@ func (t *TypeEditor) Layout(gtx C) D {
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
 			b := material.IconButton(theme, &t.menuButton, typeMenuIcon, "type")
-			b.Size = unit.Dp(12)
-			b.Inset = layout.UniformInset(unit.Dp(2))
+			b.Size = 12
+			b.Inset = layout.UniformInset(2)
 			b.Background = theme.Bg
 			b.Color = theme.Fg
 			gtx.Constraints.Min.Y = 0
