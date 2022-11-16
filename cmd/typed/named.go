@@ -27,9 +27,9 @@ func NewNamedTypeEditor(typ *types.NamedType) *NamedTypeEditor {
 
 func (n *NamedTypeEditor) Layout(gtx C) D {
 	for _, e := range n.named.Events() {
-		switch e := e.(type) {
-		case widget.SubmitEvent:
-			n.typ.Name = e.Text
+		switch e.(type) {
+		case widget.ChangeEvent:
+			n.typ.Name = n.named.Text()
 		}
 	}
 

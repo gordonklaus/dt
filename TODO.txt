@@ -1,0 +1,3 @@
+- Store integer size as int Size (and later, bool Static), or as enum DynamicSize|StaticSize?
+- Combine int and uint?  Only in the UI?
+- Combine float32 and float64?  Only in the UI?

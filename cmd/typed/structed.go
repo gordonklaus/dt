@@ -12,6 +12,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
+	"golang.org/x/exp/slices"
 )
 
 type StructTypeEditor struct {
@@ -20,17 +21,38 @@ type StructTypeEditor struct {
 }
 
 func NewStructTypeEditor(typ *types.StructType) *StructTypeEditor {
-	ed := &StructTypeEditor{
+	s := &StructTypeEditor{
 		typ:    typ,
 		fields: make([]*StructFieldTypeEditor, len(typ.Fields)),
 	}
 	for i, f := range typ.Fields {
-		ed.fields[i] = NewStructFieldTypeEditor(f)
+		s.fields[i] = NewStructFieldTypeEditor(s, f)
 	}
-	return ed
+	return s
 }
 
 func (s *StructTypeEditor) Type() types.Type { return s.typ }
+
+func (s *StructTypeEditor) insertField(f *StructFieldTypeEditor) {
+	for i, f2 := range s.fields {
+		if f2 == f {
+			field := &types.StructFieldType{}
+			s.typ.Fields = slices.Insert(s.typ.Fields, i+1, field)
+			s.fields = slices.Insert(s.fields, i+1, NewStructFieldTypeEditor(s, field))
+			break
+		}
+	}
+}
+
+func (s *StructTypeEditor) deleteField(f *StructFieldTypeEditor) {
+	for i, f2 := range s.fields {
+		if f2 == f {
+			s.typ.Fields = slices.Delete(s.typ.Fields, i, i+1)
+			s.fields = slices.Delete(s.fields, i, i+1)
+			break
+		}
+	}
+}
 
 func (s *StructTypeEditor) Layout(gtx C) D {
 	maxFieldNameWidth := 0
@@ -74,19 +96,22 @@ func (s *StructTypeEditor) Layout(gtx C) D {
 }
 
 type StructFieldTypeEditor struct {
-	typ   *types.StructFieldType
-	named widget.Editor
-	typed *TypeEditor
+	parent *StructTypeEditor
+	typ    *types.StructFieldType
+	named  widget.Editor
+	typed  *TypeEditor
 
 	nameRec Recording
 }
 
-func NewStructFieldTypeEditor(typ *types.StructFieldType) *StructFieldTypeEditor {
+func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldType) *StructFieldTypeEditor {
 	f := &StructFieldTypeEditor{
-		typ: typ,
+		parent: parent,
+		typ:    typ,
 		named: widget.Editor{
 			Alignment:  text.End,
 			SingleLine: true,
+			Submit:     true,
 		},
 		typed: NewTypeEditor(&typ.Type),
 	}
@@ -102,8 +127,14 @@ func (f *StructFieldTypeEditor) LayoutName(gtx C) int {
 func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
 	for _, e := range f.named.Events() {
 		switch e := e.(type) {
+		case widget.ChangeEvent:
+			f.typ.Name = f.named.Text()
 		case widget.SubmitEvent:
-			f.typ.Name = e.Text
+			if e.Text == "" {
+				f.parent.deleteField(f)
+			} else {
+				f.parent.insertField(f)
+			}
 		}
 	}
 

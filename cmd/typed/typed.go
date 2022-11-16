@@ -16,11 +16,15 @@ type TypeEditor struct {
 	menuButton widget.Clickable
 	showMenu   bool
 	menu       component.MenuState
-	items      struct {
-		int, strct widget.Clickable
-	}
+	items      []*typeMenuItem
 
 	ed typeEditor
+}
+
+type typeMenuItem struct {
+	c   widget.Clickable
+	txt string
+	new func() types.Type
 }
 
 type typeEditor interface {
@@ -31,22 +35,52 @@ type typeEditor interface {
 func NewTypeEditor(typ *types.Type) *TypeEditor {
 	t := &TypeEditor{
 		typ: typ,
+		items: []*typeMenuItem{
+			{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
+			{txt: "int", new: func() types.Type { return &types.IntType{Size: 64} }},
+			{txt: "uint", new: func() types.Type { return &types.UintType{Size: 64} }},
+			{txt: "float32", new: func() types.Type { return &types.Float32Type{} }},
+			{txt: "float64", new: func() types.Type { return &types.Float64Type{} }},
+			{txt: "string", new: func() types.Type { return &types.StringType{} }},
+			{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }}, // Include a single field because StructTypeEditor has no way yet to add a first field.
+			{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
+			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
+			{txt: "option", new: func() types.Type { return &types.OptionType{} }},
+		},
 	}
-	t.menu.Options = []func(C) D{
-		component.MenuItem(theme, &t.items.int, "int").Layout,
-		component.MenuItem(theme, &t.items.strct, "struct").Layout,
-	}
-
-	switch typ := (*typ).(type) {
-	case *types.IntType, *types.UintType:
-		t.ed = NewIntTypeEditor(typ)
-	case *types.StringType:
-		t.ed = NewStringTypeEditor(typ)
-	case *types.StructType:
-		t.ed = NewStructTypeEditor(typ)
-	}
-
+	t.menu.Options = mapSlice(t.items, func(i *typeMenuItem) func(C) D {
+		return component.MenuItem(theme, &i.c, i.txt).Layout
+	})
+	t.ed = t.newEditor(*typ)
 	return t
+}
+
+func mapSlice[T, U any](t []T, f func(T) U) []U {
+	u := make([]U, len(t))
+	for i, t := range t {
+		u[i] = f(t)
+	}
+	return u
+}
+
+func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
+	switch typ := typ.(type) {
+	case nil:
+		return nil
+	case *types.BoolType, *types.Float32Type, *types.Float64Type, *types.StringType:
+		return NewBasicTypeEditor(typ)
+	case *types.IntType, *types.UintType:
+		return NewIntTypeEditor(typ)
+	case *types.StructType:
+		return NewStructTypeEditor(typ)
+	case *types.EnumType:
+		return NewEnumTypeEditor(typ)
+	case *types.ArrayType:
+		return NewArrayTypeEditor(typ)
+	case *types.OptionType:
+		return NewOptionTypeEditor(typ)
+	}
+	panic("unreached")
 }
 
 var typeMenuIcon, _ = widget.NewIcon(icons.ImageEdit)
@@ -90,11 +124,10 @@ func (t *TypeEditor) Layout(gtx C) D {
 }
 
 func (t *TypeEditor) itemClicked() typeEditor {
-	switch {
-	case t.items.int.Clicked():
-		return NewIntTypeEditor(&types.IntType{Size: 64})
-	case t.items.strct.Clicked():
-		return NewStructTypeEditor(&types.StructType{})
+	for _, i := range t.items {
+		if i.c.Clicked() {
+			return t.newEditor(i.new())
+		}
 	}
 	return nil
 }
