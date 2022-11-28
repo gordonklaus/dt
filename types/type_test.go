@@ -32,8 +32,8 @@ func TestType(t *testing.T) {
 	)
 	testType(t,
 		&NamedType{
-			Name: "Bob",
-			Type: newInt64Type(),
+			Package: &PackageID_Current{},
+			Name:    "Bob",
 		},
 		&NamedType{},
 	)

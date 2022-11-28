@@ -33,13 +33,14 @@ func (e *EnumType) Read(b *bits.Buffer) error {
 }
 
 type EnumElemType struct {
-	Name string
-	Type Type
+	Name, Doc string
+	Type      Type
 }
 
 func (e *EnumElemType) Write(b *bits.Buffer) {
 	b.WriteSize(func() {
 		b.WriteString(e.Name)
+		b.WriteString(e.Doc)
 		WriteType(b, e.Type)
 	})
 }
@@ -47,6 +48,9 @@ func (e *EnumElemType) Write(b *bits.Buffer) {
 func (e *EnumElemType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
 		if err := b.ReadString(&e.Name); err != nil {
+			return err
+		}
+		if err := b.ReadString(&e.Doc); err != nil {
 			return err
 		}
 		return ReadType(b, &e.Type)

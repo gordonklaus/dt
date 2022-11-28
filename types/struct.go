@@ -33,13 +33,14 @@ func (s *StructType) Read(b *bits.Buffer) error {
 }
 
 type StructFieldType struct {
-	Name string
-	Type Type
+	Name, Doc string
+	Type      Type
 }
 
 func (s *StructFieldType) Write(b *bits.Buffer) {
 	b.WriteSize(func() {
 		b.WriteString(s.Name)
+		b.WriteString(s.Doc)
 		WriteType(b, s.Type)
 	})
 }
@@ -47,6 +48,9 @@ func (s *StructFieldType) Write(b *bits.Buffer) {
 func (s *StructFieldType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
 		if err := b.ReadString(&s.Name); err != nil {
+			return err
+		}
+		if err := b.ReadString(&s.Doc); err != nil {
 			return err
 		}
 		return ReadType(b, &s.Type)

@@ -1,3 +1,6 @@
 - Store integer size as int Size (and later, bool Static), or as enum DynamicSize|StaticSize?
 - Combine int and uint?  Only in the UI?
 - Combine float32 and float64?  Only in the UI?
+- Add Index (int64 (signed!)) to StructField and EnumElement and allow fields and elements to be reordered (for documentation purposes only - serialization order is determined by Index)?
+- Map type
+- typEd UI design idea:  lay out types just as they would be positioned in a text format (indented lines of text) and with similar keyboard navigation, for familiarity's sake
