@@ -1,8 +1,6 @@
 package data
 
 import (
-	"math"
-
 	"github.com/gordonklaus/data/bits"
 	"github.com/gordonklaus/data/types"
 )
@@ -17,13 +15,11 @@ func NewFloat32Value(t *types.Float32Type) *Float32Value {
 }
 
 func (f *Float32Value) Write(b *bits.Buffer) {
-	b.WriteUint32(math.Float32bits(f.X))
+	b.WriteFloat32(f.X)
 }
 
 func (f *Float32Value) Read(b *bits.Buffer) error {
-	x, err := b.ReadUint32()
-	f.X = math.Float32frombits(x)
-	return err
+	return b.ReadFloat32(&f.X)
 }
 
 type Float64Value struct {
@@ -36,11 +32,9 @@ func NewFloat64Value(t *types.Float64Type) *Float64Value {
 }
 
 func (f *Float64Value) Write(b *bits.Buffer) {
-	b.WriteUint64(math.Float64bits(f.X))
+	b.WriteFloat64(f.X)
 }
 
 func (f *Float64Value) Read(b *bits.Buffer) error {
-	x, err := b.ReadUint64()
-	f.X = math.Float64frombits(x)
-	return err
+	return b.ReadFloat64(&f.X)
 }

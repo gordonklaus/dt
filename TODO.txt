@@ -1,6 +1,12 @@
-- Store integer size as int Size (and later, bool Static), or as enum DynamicSize|StaticSize?
-- Combine int and uint?  Only in the UI?
-- Combine float32 and float64?  Only in the UI?
-- Add Index (int64 (signed!)) to StructField and EnumElement and allow fields and elements to be reordered (for documentation purposes only - serialization order is determined by Index)?
+- Only allow power-of-two int sizes (8, 16, 32, 64).  (But any size for Static ints.)
+	- Enforce this restriction via the UI and tooling, not the type system.
+	- And store ints as 8 payload bits + 1 continuation bit (so that those sizes are exactly represented)?  Not so important (and might have a detrimental effect by reducing the chance of byte-alignment).
+- Combine int and uint.
+- Combine float32 and float64.
+- Store packages on disk as Any values, so they are self-describing (or rather, self-identifying)?
+- Add generic types?  Use cases: AuthRequest[T], AuthResponse[T], CacheRequest[T], CacheResponse[T]. 
+	- Is metadata a better solution to these problems?  A protocol could specify its allowed metadata, instead of it being arbitrary (like HTTP, gRPC).
+	- Since these use cases come in XRequest/XResponse pairs, they would decorate functions or whole protocols.  The decorators are second-order functions.
+- Add Index (int64 (signed!)) to StructField and EnumElement and allow fields and elements to be reordered (for documentation purposes only - serialization order is determined by one or the other)?
 - Map type
 - typEd UI design idea:  lay out types just as they would be positioned in a text format (indented lines of text) and with similar keyboard navigation, for familiarity's sake

@@ -9,6 +9,7 @@ import (
 type NamedType struct {
 	Package PackageID
 	Name    string
+	Type    Type // *EnumType or *StructType
 }
 
 func (n *NamedType) Write(b *bits.Buffer) {
@@ -21,8 +22,8 @@ func (n *NamedType) Write(b *bits.Buffer) {
 
 func (n *NamedType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
-		pid, err := b.ReadVarUint_4bit()
-		if err != nil {
+		var pid uint64
+		if err := b.ReadVarUint_4bit(&pid); err != nil {
 			return err
 		}
 		switch pid {

@@ -17,8 +17,8 @@ func (e *EnumType) Write(b *bits.Buffer) {
 
 func (e *EnumType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
-		len, err := b.ReadVarUint()
-		if err != nil {
+		var len uint64
+		if err := bits.ReadVarUint(b, &len); err != nil {
 			return err
 		}
 		e.Elems = make([]*EnumElemType, len)
@@ -34,7 +34,7 @@ func (e *EnumType) Read(b *bits.Buffer) error {
 
 type EnumElemType struct {
 	Name, Doc string
-	Type      Type
+	Type      Type // not *EnumType or *StructType
 }
 
 func (e *EnumElemType) Write(b *bits.Buffer) {

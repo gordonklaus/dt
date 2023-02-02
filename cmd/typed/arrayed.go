@@ -11,10 +11,10 @@ type ArrayTypeEditor struct {
 	elem *TypeEditor
 }
 
-func NewArrayTypeEditor(typ *types.ArrayType) *ArrayTypeEditor {
+func NewArrayTypeEditor(typ *types.ArrayType, loader *types.Loader) *ArrayTypeEditor {
 	return &ArrayTypeEditor{
 		typ:  typ,
-		elem: NewTypeEditor(&typ.Elem),
+		elem: NewTypeEditor(&typ.Elem, loader),
 	}
 }
 

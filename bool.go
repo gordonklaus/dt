@@ -19,7 +19,5 @@ func (i *BoolValue) Write(b *bits.Buffer) {
 }
 
 func (i *BoolValue) Read(b *bits.Buffer) error {
-	var err error
-	i.X, err = b.ReadBool()
-	return err
+	return b.ReadBool(&i.X)
 }

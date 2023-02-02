@@ -30,8 +30,7 @@ func (e *EnumValue) Write(b *bits.Buffer) {
 }
 
 func (e *EnumValue) Read(b *bits.Buffer) error {
-	var err error
-	if e.Elem, err = b.ReadVarUint_4bit(); err != nil {
+	if err := b.ReadVarUint_4bit(&e.Elem); err != nil {
 		return err
 	}
 	if e.Elem < uint64(len(e.Type.Elems)) {

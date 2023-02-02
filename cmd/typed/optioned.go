@@ -11,10 +11,10 @@ type OptionTypeEditor struct {
 	val *TypeEditor
 }
 
-func NewOptionTypeEditor(typ *types.OptionType) *OptionTypeEditor {
+func NewOptionTypeEditor(typ *types.OptionType, loader *types.Loader) *OptionTypeEditor {
 	return &OptionTypeEditor{
 		typ: typ,
-		val: NewTypeEditor(&typ.ValueType),
+		val: NewTypeEditor(&typ.ValueType, loader),
 	}
 }
 

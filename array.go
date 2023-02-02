@@ -24,8 +24,8 @@ func (a *ArrayValue) Write(b *bits.Buffer) {
 }
 
 func (a *ArrayValue) Read(b *bits.Buffer) error {
-	len, err := b.ReadVarUint()
-	if err != nil {
+	var len uint64
+	if err := bits.ReadVarUint(b, &len); err != nil {
 		return err
 	}
 	a.Elems = make([]Value, len)

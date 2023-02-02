@@ -18,7 +18,8 @@ func (o *OptionValue) Write(b *bits.Buffer) {
 }
 
 func (o *OptionValue) Read(b *bits.Buffer) error {
-	if ok, err := b.ReadBool(); err != nil {
+	var ok bool
+	if err := b.ReadBool(&ok); err != nil {
 		return err
 	} else if ok {
 		o.Value = NewValue(o.ValueType)

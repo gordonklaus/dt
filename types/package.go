@@ -1,10 +1,21 @@
 package types
 
-import "github.com/gordonklaus/data/bits"
+import (
+	"github.com/gordonklaus/data/bits"
+)
 
 type Package struct {
 	Name, Doc string
 	Types     []*TypeName
+}
+
+func (p *Package) Type(name string) *TypeName {
+	for _, t := range p.Types {
+		if t.Name == name {
+			return t
+		}
+	}
+	return nil
 }
 
 func (p *Package) Write(b *bits.Buffer) {
@@ -26,8 +37,8 @@ func (p *Package) Read(b *bits.Buffer) error {
 		if err := b.ReadString(&p.Doc); err != nil {
 			return err
 		}
-		len, err := b.ReadVarUint()
-		if err != nil {
+		var len uint64
+		if err := bits.ReadVarUint(b, &len); err != nil {
 			return err
 		}
 		p.Types = make([]*TypeName, len)
@@ -46,7 +57,7 @@ type PackageID interface {
 	Read(*bits.Buffer) error
 }
 
-type PackageID_Current struct{} // DELETE?  Always use fully qualified ID?
+type PackageID_Current struct{} // TODO: Replace with PackageID_SourceControl.
 
 func (*PackageID_Current) Write(b *bits.Buffer) {
 	b.WriteSize(func() {})

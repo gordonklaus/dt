@@ -3,8 +3,14 @@ package bits
 import (
 	"fmt"
 	"io"
+	"math"
 	"unsafe"
 )
+
+type ReadWriter interface {
+	Read(*Buffer) error
+	Write(*Buffer)
+}
 
 type Buffer struct {
 	b    []byte
@@ -13,6 +19,15 @@ type Buffer struct {
 
 func NewBuffer() *Buffer {
 	b := &Buffer{}
+	b.grow(8)
+	return b
+}
+
+func NewReadBuffer(buf []byte) *Buffer {
+	b := &Buffer{
+		b: buf[:len(buf):len(buf)],
+		n: 8 * uint64(len(buf)),
+	}
 	b.grow(8)
 	return b
 }
@@ -41,13 +56,13 @@ func (b *Buffer) WriteBool(x bool) {
 	}
 }
 
-func (b *Buffer) ReadBool() (bool, error) {
+func (b *Buffer) ReadBool(x *bool) error {
 	if b.Remaining() < 1 {
-		return false, io.ErrUnexpectedEOF
+		return io.ErrUnexpectedEOF
 	}
-	x := b.rx()>>b.ri()&1 != 0
+	*x = b.rx()>>b.ri()&1 != 0
 	b.r++
-	return x, nil
+	return nil
 }
 
 func (b *Buffer) WriteUint32(x uint32) {
@@ -56,13 +71,13 @@ func (b *Buffer) WriteUint32(x uint32) {
 	b.n += 32
 }
 
-func (b *Buffer) ReadUint32() (uint32, error) {
+func (b *Buffer) ReadUint32(x *uint32) error {
 	if b.Remaining() < 32 {
-		return 0, io.ErrUnexpectedEOF
+		return io.ErrUnexpectedEOF
 	}
-	x := uint32(b.rx() >> b.ri())
+	*x = uint32(b.rx() >> b.ri())
 	b.r += 32
-	return x, nil
+	return nil
 }
 
 func (b *Buffer) WriteUint64(x uint64) {
@@ -72,20 +87,22 @@ func (b *Buffer) WriteUint64(x uint64) {
 	b.n += 64
 }
 
-func (b *Buffer) ReadUint64() (uint64, error) {
+func (b *Buffer) ReadUint64(x *uint64) error {
 	if b.Remaining() < 64 {
-		return 0, io.ErrUnexpectedEOF
+		return io.ErrUnexpectedEOF
 	}
-	x := b.rx() >> b.ri()
+	*x = b.rx() >> b.ri()
 	b.r += 64
-	x |= b.rx() << (64 - b.ri())
-	return x, nil
+	*x |= b.rx() << (64 - b.ri())
+	return nil
 }
 
 func (b *Buffer) WriteInt64(x int64) { b.WriteUint64(uint64(x)) }
-func (b *Buffer) ReadInt64() (int64, error) {
-	x, err := b.ReadUint64()
-	return int64(x), err
+func (b *Buffer) ReadInt64(x *int64) error {
+	var i uint64
+	err := b.ReadUint64(&i)
+	*x = int64(i)
+	return err
 }
 
 func (b *Buffer) WriteVarUint(x uint64) {
@@ -104,27 +121,51 @@ func (b *Buffer) WriteVarUint(x uint64) {
 	}
 }
 
-func (b *Buffer) ReadVarUint() (uint64, error) {
-	var x uint64
-	for shift := 0; shift < 64-7; shift += 7 {
+func (b *Buffer) ReadVarUint(x *uint64, bits int) error {
+	for shift := 0; shift < bits; shift += 7 {
 		if b.Remaining() < 8 {
-			return 0, io.ErrUnexpectedEOF
+			return io.ErrUnexpectedEOF
 		}
 
 		y := b.rx() >> b.ri()
 		b.r += 8
-		x |= y & (1<<7 - 1) << shift
+		*x |= y & (1<<7 - 1) << shift
 		if y&(1<<7) == 0 {
-			return x, nil
+			return nil
 		}
 	}
-	return 0, fmt.Errorf("VarUint overflows uint64")
+	return fmt.Errorf("VarUint overflows %d bits", bits)
+}
+
+type uintType interface {
+	uint8 | uint16 | uint32 | uint64
+}
+
+func ReadVarUint[U uintType](b *Buffer, x *U) error {
+	var u uint64
+	err := b.ReadVarUint(&u, int(8*unsafe.Sizeof(*x)))
+	*x = U(u)
+	return err
 }
 
 func (b *Buffer) WriteVarInt(x int64) { b.WriteVarUint(zigzag(x)) }
-func (b *Buffer) ReadVarInt() (int64, error) {
-	x, err := b.ReadVarUint()
-	return zagzig(x), err
+
+func (b *Buffer) ReadVarInt(x *int64, bits int) error {
+	var u uint64
+	err := b.ReadVarUint(&u, bits)
+	*x = int64(zagzig(u))
+	return err
+}
+
+type intType interface {
+	int8 | int16 | int32 | int64
+}
+
+func ReadVarInt[I intType](b *Buffer, x *I) error {
+	var i int64
+	err := b.ReadVarInt(&i, int(8*unsafe.Sizeof(*x)))
+	*x = I(i)
+	return err
 }
 
 func (b *Buffer) WriteVarUint_4bit(x uint64) {
@@ -145,25 +186,45 @@ func (b *Buffer) WriteVarUint_4bit(x uint64) {
 	}
 }
 
-func (b *Buffer) ReadVarUint_4bit() (uint64, error) {
-	var x uint64
-	for shift := 0; shift < 64-3; shift += 3 {
+func (b *Buffer) ReadVarUint_4bit(x *uint64) error {
+	for shift := 0; shift < 64; shift += 3 {
 		if b.Remaining() < 4 {
-			return 0, io.ErrUnexpectedEOF
+			return io.ErrUnexpectedEOF
 		}
 
 		y := b.rx() >> b.ri()
 		b.r += 4
-		x |= y & (1<<3 - 1) << shift
+		*x |= y & (1<<3 - 1) << shift
 		if y&(1<<3) == 0 {
-			return x, nil
+			return nil
 		}
 	}
-	return 0, fmt.Errorf("VarUint_4bit overflows uint64")
+	return fmt.Errorf("VarUint_4bit overflows uint64")
 }
 
 func zigzag(x int64) uint64 { return uint64((x >> 63) ^ (x << 1)) }
 func zagzig(x uint64) int64 { return int64((x >> 1) ^ -(x & 1)) }
+
+func (b *Buffer) WriteFloat32(x float32) { b.WriteUint32(math.Float32bits(x)) }
+func (b *Buffer) WriteFloat64(x float64) { b.WriteUint64(math.Float64bits(x)) }
+
+func (b *Buffer) ReadFloat32(x *float32) error {
+	var i uint32
+	if err := b.ReadUint32(&i); err != nil {
+		return err
+	}
+	*x = math.Float32frombits(i)
+	return nil
+}
+
+func (b *Buffer) ReadFloat64(x *float64) error {
+	var i uint64
+	if err := b.ReadUint64(&i); err != nil {
+		return err
+	}
+	*x = math.Float64frombits(i)
+	return nil
+}
 
 func (b *Buffer) WriteString(s string) {
 	b.WriteVarUint(uint64(len(s)))
@@ -171,12 +232,12 @@ func (b *Buffer) WriteString(s string) {
 }
 
 func (b *Buffer) ReadString(s *string) error {
-	len, err := b.ReadVarUint()
-	if err != nil {
+	var len uint64
+	if err := ReadVarUint(b, &len); err != nil {
 		return err
 	}
 	bb := make([]byte, len)
-	if err = b.ReadBytes(bb); err != nil {
+	if err := b.ReadBytes(bb); err != nil {
 		return err
 	}
 	*s = string(bb)
@@ -237,8 +298,8 @@ func (b *Buffer) WriteSize(f func()) {
 }
 
 func (b *Buffer) ReadSize(f func() error) error {
-	size, err := b.ReadVarUint()
-	if err != nil {
+	var size uint64
+	if err := ReadVarUint(b, &size); err != nil {
 		return err
 	}
 	if b.r+size > b.n {

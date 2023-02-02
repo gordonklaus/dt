@@ -16,17 +16,19 @@ import (
 )
 
 type EnumTypeEditor struct {
-	typ   *types.EnumType
-	elems []*EnumElemTypeEditor
+	typ    *types.EnumType
+	loader *types.Loader
+	elems  []*EnumElemTypeEditor
 }
 
-func NewEnumTypeEditor(typ *types.EnumType) *EnumTypeEditor {
+func NewEnumTypeEditor(typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
 	s := &EnumTypeEditor{
-		typ:   typ,
-		elems: make([]*EnumElemTypeEditor, len(typ.Elems)),
+		typ:    typ,
+		loader: loader,
+		elems:  make([]*EnumElemTypeEditor, len(typ.Elems)),
 	}
 	for i, f := range typ.Elems {
-		s.elems[i] = NewEnumElemTypeEditor(s, f)
+		s.elems[i] = NewEnumElemTypeEditor(s, f, loader)
 	}
 	return s
 }
@@ -38,7 +40,7 @@ func (e *EnumTypeEditor) insertElem(f *EnumElemTypeEditor) {
 		if f2 == f {
 			elem := &types.EnumElemType{}
 			e.typ.Elems = slices.Insert(e.typ.Elems, i+1, elem)
-			e.elems = slices.Insert(e.elems, i+1, NewEnumElemTypeEditor(e, elem))
+			e.elems = slices.Insert(e.elems, i+1, NewEnumElemTypeEditor(e, elem, e.loader))
 			break
 		}
 	}
@@ -74,7 +76,7 @@ func (e *EnumTypeEditor) Layout(gtx C) D {
 	})
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(material.Body1(theme, "struct ").Layout),
+		layout.Rigid(material.Body1(theme, "enum ").Layout),
 		layout.Rigid(func(gtx C) D {
 			width := gtx.Dp(16)
 			height := elemsRec.Dims.Size.Y + gtx.Dp(8)
@@ -104,7 +106,7 @@ type EnumElemTypeEditor struct {
 	nameRec Recording
 }
 
-func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType) *EnumElemTypeEditor {
+func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, loader *types.Loader) *EnumElemTypeEditor {
 	f := &EnumElemTypeEditor{
 		parent: parent,
 		typ:    typ,
@@ -113,7 +115,7 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType) *Enu
 			SingleLine: true,
 			Submit:     true,
 		},
-		typed: NewTypeEditor(&typ.Type),
+		typed: NewTypeEditor(&typ.Type, loader),
 	}
 	f.named.SetText(typ.Name)
 	return f

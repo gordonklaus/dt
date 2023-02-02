@@ -4,7 +4,7 @@ import "github.com/gordonklaus/data/bits"
 
 type TypeName struct {
 	Name, Doc string
-	Type      Type
+	Type      Type // *EnumType or *StructType
 }
 
 func (t *TypeName) Write(b *bits.Buffer) {

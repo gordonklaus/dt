@@ -11,7 +11,8 @@ import (
 )
 
 type TypeEditor struct {
-	typ *types.Type
+	typ    *types.Type
+	loader *types.Loader
 
 	menuButton widget.Clickable
 	showMenu   bool
@@ -32,9 +33,26 @@ type typeEditor interface {
 	Layout(gtx C) D
 }
 
-func NewTypeEditor(typ *types.Type) *TypeEditor {
+func NewTypeNameTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	t := &TypeEditor{
-		typ: typ,
+		typ:    typ,
+		loader: loader,
+		items: []*typeMenuItem{
+			{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }}, // Include a single field because StructTypeEditor has no way yet to add a first field.
+			{txt: "enum", new: func() types.Type { return &types.EnumType{Elems: []*types.EnumElemType{{}}} }},         // Include a single element because EnumTypeEditor has no way yet to add a first element.
+		},
+	}
+	t.menu.Options = mapSlice(t.items, func(i *typeMenuItem) func(C) D {
+		return component.MenuItem(theme, &i.c, i.txt).Layout
+	})
+	t.ed = t.newEditor(*typ)
+	return t
+}
+
+func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := &TypeEditor{
+		typ:    typ,
+		loader: loader,
 		items: []*typeMenuItem{
 			{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
 			{txt: "int", new: func() types.Type { return &types.IntType{Size: 64} }},
@@ -42,11 +60,16 @@ func NewTypeEditor(typ *types.Type) *TypeEditor {
 			{txt: "float32", new: func() types.Type { return &types.Float32Type{} }},
 			{txt: "float64", new: func() types.Type { return &types.Float64Type{} }},
 			{txt: "string", new: func() types.Type { return &types.StringType{} }},
-			{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }}, // Include a single field because StructTypeEditor has no way yet to add a first field.
-			{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
 			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
 			{txt: "option", new: func() types.Type { return &types.OptionType{} }},
 		},
+	}
+	pkg, _ := loader.Load(&types.PackageID_Current{})
+	for _, n := range pkg.Types {
+		n := n
+		t.items = append(t.items, &typeMenuItem{txt: n.Name, new: func() types.Type {
+			return &types.NamedType{Package: &types.PackageID_Current{}, Name: n.Name, Type: n.Type}
+		}})
 	}
 	t.menu.Options = mapSlice(t.items, func(i *typeMenuItem) func(C) D {
 		return component.MenuItem(theme, &i.c, i.txt).Layout
@@ -72,13 +95,15 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	case *types.IntType, *types.UintType:
 		return NewIntTypeEditor(typ)
 	case *types.StructType:
-		return NewStructTypeEditor(typ)
+		return NewStructTypeEditor(typ, t.loader)
 	case *types.EnumType:
-		return NewEnumTypeEditor(typ)
+		return NewEnumTypeEditor(typ, t.loader)
 	case *types.ArrayType:
-		return NewArrayTypeEditor(typ)
+		return NewArrayTypeEditor(typ, t.loader)
 	case *types.OptionType:
-		return NewOptionTypeEditor(typ)
+		return NewOptionTypeEditor(typ, t.loader)
+	case *types.NamedType:
+		return NewNamedTypeEditor(typ)
 	}
 	panic("unreached")
 }

@@ -95,8 +95,8 @@ func kind(t Type) Kind {
 }
 
 func ReadType(b *bits.Buffer, t *Type) error {
-	k, err := b.ReadVarUint_4bit()
-	if err != nil {
+	var k uint64
+	if err := b.ReadVarUint_4bit(&k); err != nil {
 		return err
 	}
 

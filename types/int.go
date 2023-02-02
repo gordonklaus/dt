@@ -12,9 +12,7 @@ func (i *UintType) Write(b *bits.Buffer) {
 
 func (i *UintType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
-		var err error
-		i.Size, err = b.ReadVarUint()
-		return err
+		return bits.ReadVarUint(b, &i.Size)
 	})
 }
 
@@ -28,8 +26,6 @@ func (i *IntType) Write(b *bits.Buffer) {
 
 func (i *IntType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
-		var err error
-		i.Size, err = b.ReadVarUint()
-		return err
+		return bits.ReadVarUint(b, &i.Size)
 	})
 }

@@ -17,8 +17,8 @@ func (s *StructType) Write(b *bits.Buffer) {
 
 func (s *StructType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
-		len, err := b.ReadVarUint()
-		if err != nil {
+		var len uint64
+		if err := bits.ReadVarUint(b, &len); err != nil {
 			return err
 		}
 		s.Fields = make([]*StructFieldType, len)
@@ -34,7 +34,7 @@ func (s *StructType) Read(b *bits.Buffer) error {
 
 type StructFieldType struct {
 	Name, Doc string
-	Type      Type
+	Type      Type // not *EnumType or *StructType
 }
 
 func (s *StructFieldType) Write(b *bits.Buffer) {

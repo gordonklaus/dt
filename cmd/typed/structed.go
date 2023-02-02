@@ -17,16 +17,18 @@ import (
 
 type StructTypeEditor struct {
 	typ    *types.StructType
+	loader *types.Loader
 	fields []*StructFieldTypeEditor
 }
 
-func NewStructTypeEditor(typ *types.StructType) *StructTypeEditor {
+func NewStructTypeEditor(typ *types.StructType, loader *types.Loader) *StructTypeEditor {
 	s := &StructTypeEditor{
 		typ:    typ,
+		loader: loader,
 		fields: make([]*StructFieldTypeEditor, len(typ.Fields)),
 	}
 	for i, f := range typ.Fields {
-		s.fields[i] = NewStructFieldTypeEditor(s, f)
+		s.fields[i] = NewStructFieldTypeEditor(s, f, loader)
 	}
 	return s
 }
@@ -38,7 +40,7 @@ func (s *StructTypeEditor) insertField(f *StructFieldTypeEditor) {
 		if f2 == f {
 			field := &types.StructFieldType{}
 			s.typ.Fields = slices.Insert(s.typ.Fields, i+1, field)
-			s.fields = slices.Insert(s.fields, i+1, NewStructFieldTypeEditor(s, field))
+			s.fields = slices.Insert(s.fields, i+1, NewStructFieldTypeEditor(s, field, s.loader))
 			break
 		}
 	}
@@ -104,7 +106,7 @@ type StructFieldTypeEditor struct {
 	nameRec Recording
 }
 
-func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldType) *StructFieldTypeEditor {
+func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldType, loader *types.Loader) *StructFieldTypeEditor {
 	f := &StructFieldTypeEditor{
 		parent: parent,
 		typ:    typ,
@@ -113,7 +115,7 @@ func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldTy
 			SingleLine: true,
 			Submit:     true,
 		},
-		typed: NewTypeEditor(&typ.Type),
+		typed: NewTypeEditor(&typ.Type, loader),
 	}
 	f.named.SetText(typ.Name)
 	return f

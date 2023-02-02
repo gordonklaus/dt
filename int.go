@@ -30,9 +30,7 @@ func (i *UintValue) Write(b *bits.Buffer) {
 }
 
 func (i *UintValue) Read(b *bits.Buffer) error {
-	var err error
-	i.i, err = b.ReadVarUint()
-	return err
+	return b.ReadVarUint(&i.i, int(i.Type.Size))
 }
 
 type IntValue struct {
@@ -58,7 +56,5 @@ func (i *IntValue) Write(b *bits.Buffer) {
 }
 
 func (i *IntValue) Read(b *bits.Buffer) error {
-	var err error
-	i.i, err = b.ReadVarInt()
-	return err
+	return b.ReadVarInt(&i.i, int(i.Type.Size))
 }
