@@ -71,10 +71,11 @@ func (l *Loader) setNamedTypes(t Type) error {
 		if err != nil {
 			return err
 		}
-		t.Type = p.Type(t.Name).Type
-		if t.Type == nil {
+		tn := p.Type(t.Name)
+		if tn == nil {
 			return fmt.Errorf("package %s has no type %s", p.Name, t.Name)
 		}
+		t.Type = tn.Type
 	}
 	return nil
 }

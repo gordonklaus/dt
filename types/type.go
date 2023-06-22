@@ -7,8 +7,7 @@ import (
 )
 
 type Type interface {
-	Write(*bits.Buffer)
-	Read(*bits.Buffer) error
+	bits.ReadWriter
 }
 
 type Kind uint64

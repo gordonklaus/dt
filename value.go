@@ -6,8 +6,7 @@ import (
 )
 
 type Value interface {
-	Write(*bits.Buffer)
-	Read(*bits.Buffer) error
+	bits.ReadWriter
 }
 
 func NewValue(t types.Type) Value {

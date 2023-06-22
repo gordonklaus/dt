@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"go/format"
@@ -29,7 +28,7 @@ func main() {
 
 	loader := types.NewLoader(types.NewStorage(dir))
 	pkg, err := loader.Load(&types.PackageID_Current{}) // TODO: Resolve current package ID based on current directory and source control/module configuration.
-	if errors.Is(err, fs.ErrNotExist) {
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -222,7 +221,7 @@ func (w *writer) writeTypeWriter(t types.Type, v string) {
 	case *types.UintType:
 		w.writeln("b.WriteVarUint(%s)", v)
 	case *types.IntType:
-		w.writeln("b.WriteVarInt(%s)", v)
+			w.writeln("b.WriteVarInt(%s)", v)
 	case *types.Float32Type:
 		w.writeln("b.WriteFloat32(%s)", v)
 	case *types.Float64Type:
@@ -287,7 +286,7 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	case *types.UintType:
 		w.write("bits.ReadVarUint(b, %s)", v)
 	case *types.IntType:
-		w.write("bits.ReadVarInt(b, %s)", v)
+			w.write("bits.ReadVarInt(b, %s)", v)
 	case *types.Float32Type:
 		w.write("b.ReadFloat32(%s)", v)
 	case *types.Float64Type:
