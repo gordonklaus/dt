@@ -259,6 +259,9 @@ func (b *Buffer) ReadBytes(x []byte) error {
 }
 
 func (b *Buffer) WriteSize(f func()) {
+	// WriteSize takes advantage of the fact that the size of the payload (a VarUint) occupies a whole number of bytes to avoid having to bit shift the payload, which could be expensive for large payloads.
+	// The fact that the payload is written immediately with the right bit offset is also nice because it makes it possible for nested objects to do byte alignment, which would be good for large byte arrays.
+
 	b2 := NewBuffer()
 	b2.n = b.i()
 	*b, *b2 = *b2, *b
