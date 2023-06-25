@@ -173,9 +173,10 @@ func (w *writer) writeType(t types.Type) {
 		w.write("bool")
 	case *types.IntType:
 		if t.Unsigned {
-			w.write("u")
+			w.write("uint64")
+		} else {
+			w.write("int64")
 		}
-		w.write("int%d", t.Size)
 	case *types.FloatType:
 		w.write("float%d", t.Size)
 
@@ -199,9 +200,9 @@ func (w *writer) writeTypeWriter(t types.Type, v string) {
 		w.writeln("b.WriteBool(%s)", v)
 	case *types.IntType:
 		if t.Unsigned {
-			w.writeln("b.WriteVarUint(uint64(%s))", v)
+			w.writeln("b.WriteVarUint(%s)", v)
 		} else {
-			w.writeln("b.WriteVarInt(int64(%s))", v)
+			w.writeln("b.WriteVarInt(%s)", v)
 		}
 	case *types.FloatType:
 		w.writeln("b.WriteFloat%d(%s)", t.Size, v)
@@ -236,7 +237,7 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	case *types.ArrayType:
 		v = indirect(v)
 		w.writeln("{var len uint64")
-		w.writeln("if err := bits.ReadVarUint(b, &len); err != nil { return err }")
+		w.writeln("if err := b.ReadVarUint(&len); err != nil { return err }")
 		w.write("%s = make([]", v)
 		w.writeType(t.Elem)
 		w.writeln(", len)")
@@ -264,9 +265,9 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 		w.write("b.ReadBool(%s)", v)
 	case *types.IntType:
 		if t.Unsigned {
-			w.writeln("bits.ReadVarUint(b, %s)", v)
+			w.write("b.ReadVarUint(%s)", v)
 		} else {
-			w.writeln("bits.ReadVarInt(b, %s)", v)
+			w.write("b.ReadVarInt(%s)", v)
 		}
 	case *types.FloatType:
 		w.write("b.ReadFloat%d(%s)", t.Size, v)

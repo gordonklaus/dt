@@ -9,7 +9,7 @@ import (
 
 func TestType(t *testing.T) {
 	testType(t,
-		newInt64Type(),
+		newIntType(),
 		&IntType{},
 	)
 	testType(t,
@@ -25,8 +25,8 @@ func TestType(t *testing.T) {
 	)
 	testType(t,
 		&StructType{Fields: []*StructFieldType{
-			{Name: "x", Type: newInt64Type()},
-			{Name: "y", Type: newInt64Type()},
+			{Name: "x", Type: newIntType()},
+			{Name: "y", Type: newIntType()},
 		}},
 		&StructType{},
 	)
@@ -40,7 +40,7 @@ func TestType(t *testing.T) {
 }
 
 func newBoolType() *BoolType     { return &BoolType{} }
-func newInt64Type() *IntType     { return &IntType{Size: 64} }
+func newIntType() *IntType       { return &IntType{} }
 func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
 func newStringType() *StringType { return &StringType{} }
 

@@ -55,7 +55,7 @@ func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 		loader: loader,
 		items: []*typeMenuItem{
 			{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
-			{txt: "int", new: func() types.Type { return &types.IntType{Size: 64} }},
+			{txt: "int", new: func() types.Type { return &types.IntType{} }},
 			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
 			{txt: "string", new: func() types.Type { return &types.StringType{} }},
 			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},

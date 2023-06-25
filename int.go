@@ -33,18 +33,12 @@ func (i *IntValue) SetInt(x int64) {
 	if i.Type.Unsigned {
 		panic(fmt.Sprintf("int is unsigned"))
 	}
-	if y := x >> i.Type.Size; y > 0 || y < -1 {
-		panic(fmt.Sprintf("%d overflows %d-bit int", x, i.Type.Size))
-	}
 	i.i = x
 }
 
 func (i *IntValue) SetUint(x uint64) {
 	if !i.Type.Unsigned {
 		panic(fmt.Sprintf("int is signed"))
-	}
-	if x>>i.Type.Size > 0 {
-		panic(fmt.Sprintf("%d overflows %d-bit uint", x, i.Type.Size))
 	}
 	i.i = int64(x)
 }
@@ -60,10 +54,10 @@ func (i *IntValue) Write(b *bits.Buffer) {
 func (i *IntValue) Read(b *bits.Buffer) error {
 	if i.Type.Unsigned {
 		var x uint64
-		err := b.ReadVarUint(&x, int(i.Type.Size))
+		err := b.ReadVarUint(&x)
 		i.i = int64(x)
 		return err
 	} else {
-		return b.ReadVarInt(&i.i, int(i.Type.Size))
+		return b.ReadVarInt(&i.i)
 	}
 }

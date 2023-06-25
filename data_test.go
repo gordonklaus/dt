@@ -39,7 +39,7 @@ func TestBasic(t *testing.T) {
 
 func TestEnum(t *testing.T) {
 	et := &types.EnumType{Elems: []*types.EnumElemType{
-		{Type: int64Type},
+		{Type: intType},
 		{Type: stringType},
 		{Type: boolType},
 	}}
@@ -59,7 +59,7 @@ func TestEnum(t *testing.T) {
 
 func TestStruct(t *testing.T) {
 	st := &types.StructType{Fields: []*types.StructFieldType{
-		{Type: int64Type},
+		{Type: intType},
 		{Type: stringType},
 	}}
 
@@ -77,7 +77,7 @@ func TestStruct(t *testing.T) {
 	sv = NewValue(st).(*StructValue)
 	sv.Fields[1].Value = newString("!#%^")
 	sv.Fields = append(sv.Fields, &StructFieldValue{
-		StructFieldType: &types.StructFieldType{Type: int64Type},
+		StructFieldType: &types.StructFieldType{Type: intType},
 		Value:           newInt64(9),
 	})
 	expect := NewValue(st).(*StructValue)
@@ -87,7 +87,7 @@ func TestStruct(t *testing.T) {
 }
 
 func TestArray(t *testing.T) {
-	at := &types.ArrayType{Elem: int64Type}
+	at := &types.ArrayType{Elem: intType}
 	testValue(t,
 		&ArrayValue{Type: at, Elems: []Value{newInt64(1), newInt64(2), newInt64(3)}},
 		NewValue(at),
@@ -101,13 +101,13 @@ func newBool(b bool) *BoolValue {
 }
 
 func newUint64(i uint64) *IntValue {
-	x := NewIntValue(uint64Type)
+	x := NewIntValue(uintType)
 	x.SetUint(i)
 	return x
 }
 
 func newInt64(i int64) *IntValue {
-	x := NewIntValue(int64Type)
+	x := NewIntValue(intType)
 	x.SetInt(i)
 	return x
 }
@@ -131,8 +131,8 @@ func newString(f string) *StringValue {
 }
 
 var boolType = &types.BoolType{}
-var int64Type = &types.IntType{Size: 64}
-var uint64Type = &types.IntType{Size: 64, Unsigned: true}
+var intType = &types.IntType{}
+var uintType = &types.IntType{Unsigned: true}
 var float32Type = &types.FloatType{Size: 32}
 var float64Type = &types.FloatType{Size: 64}
 var stringType = &types.StringType{}

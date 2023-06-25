@@ -38,7 +38,7 @@ func (p *Package) Read(b *bits.Buffer) error {
 			return err
 		}
 		var len uint64
-		if err := bits.ReadVarUint(b, &len); err != nil {
+		if err := b.ReadVarUint(&len); err != nil {
 			return err
 		}
 		p.Types = make([]*TypeName, len)

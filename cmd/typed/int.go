@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
-
 	"gioui.org/io/key"
-	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
 )
@@ -25,11 +22,6 @@ func (i *IntTypeEditor) Layout(gtx C) D {
 	for _, e := range gtx.Events(i) {
 		if e, ok := e.(key.Event); ok && e.State == key.Press {
 			switch e.Name {
-			case "S":
-				i.typ.Size /= 2
-				if i.typ.Size < 8 {
-					i.typ.Size = 64
-				}
 			case "U":
 				i.typ.Unsigned = !i.typ.Unsigned
 			}
@@ -38,14 +30,12 @@ func (i *IntTypeEditor) Layout(gtx C) D {
 
 	key.InputOp{
 		Tag:  i,
-		Keys: "S|U",
+		Keys: "U",
 	}.Add(gtx.Ops)
 
-	s := fmt.Sprintf("int%d", i.typ.Size)
+	s := "int"
 	if i.typ.Unsigned {
-		s = "u" + s
+		s = "uint"
 	}
-	return layout.Flex{}.Layout(gtx,
-		layout.Rigid(material.Body1(theme, s).Layout),
-	)
+	return material.Body1(theme, s).Layout(gtx)
 }

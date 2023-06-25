@@ -18,7 +18,7 @@ func (s *StructType) Write(b *bits.Buffer) {
 func (s *StructType) Read(b *bits.Buffer) error {
 	return b.ReadSize(func() error {
 		var len uint64
-		if err := bits.ReadVarUint(b, &len); err != nil {
+		if err := b.ReadVarUint(&len); err != nil {
 			return err
 		}
 		s.Fields = make([]*StructFieldType, len)
