@@ -100,27 +100,27 @@ func newBool(b bool) *BoolValue {
 	return x
 }
 
-func newUint64(i uint64) *UintValue {
-	x := NewUintValue(uint64Type)
-	x.Set(i)
+func newUint64(i uint64) *IntValue {
+	x := NewIntValue(uint64Type)
+	x.SetUint(i)
 	return x
 }
 
 func newInt64(i int64) *IntValue {
 	x := NewIntValue(int64Type)
-	x.Set(i)
+	x.SetInt(i)
 	return x
 }
 
-func newFloat32(f float32) *Float32Value {
-	x := NewFloat32Value(float32Type)
-	x.X = f
+func newFloat32(f float32) *FloatValue {
+	x := NewFloatValue(float32Type)
+	x.SetFloat32(f)
 	return x
 }
 
-func newFloat64(f float64) *Float64Value {
-	x := NewFloat64Value(float64Type)
-	x.X = f
+func newFloat64(f float64) *FloatValue {
+	x := NewFloatValue(float64Type)
+	x.SetFloat64(f)
 	return x
 }
 
@@ -132,9 +132,9 @@ func newString(f string) *StringValue {
 
 var boolType = &types.BoolType{}
 var int64Type = &types.IntType{Size: 64}
-var uint64Type = &types.UintType{Size: 64}
-var float32Type = &types.Float32Type{}
-var float64Type = &types.Float64Type{}
+var uint64Type = &types.IntType{Size: 64, Unsigned: true}
+var float32Type = &types.FloatType{Size: 32}
+var float64Type = &types.FloatType{Size: 64}
 var stringType = &types.StringType{}
 
 func testValue(t *testing.T, src, dst Value) {

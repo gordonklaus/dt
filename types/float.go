@@ -2,22 +2,18 @@ package types
 
 import "github.com/gordonklaus/data/bits"
 
-type Float64Type struct{}
-
-func (*Float64Type) Write(b *bits.Buffer) {
-	b.WriteSize(func() {})
+type FloatType struct {
+	Size uint64 // 32 or 64
 }
 
-func (*Float64Type) Read(b *bits.Buffer) error {
-	return b.ReadSize(func() error { return nil })
+func (f *FloatType) Write(b *bits.Buffer) {
+	b.WriteSize(func() {
+		b.WriteVarUint(f.Size)
+	})
 }
 
-type Float32Type struct{}
-
-func (*Float32Type) Write(b *bits.Buffer) {
-	b.WriteSize(func() {})
-}
-
-func (*Float32Type) Read(b *bits.Buffer) error {
-	return b.ReadSize(func() error { return nil })
+func (f *FloatType) Read(b *bits.Buffer) error {
+	return b.ReadSize(func() error {
+		return bits.ReadVarUint(b, &f.Size)
+	})
 }

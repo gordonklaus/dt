@@ -39,10 +39,10 @@ func TestType(t *testing.T) {
 	)
 }
 
-func newBoolType() *BoolType       { return &BoolType{} }
-func newInt64Type() *IntType       { return &IntType{Size: 64} }
-func newFloat64Type() *Float64Type { return &Float64Type{} }
-func newStringType() *StringType   { return &StringType{} }
+func newBoolType() *BoolType     { return &BoolType{} }
+func newInt64Type() *IntType     { return &IntType{Size: 64} }
+func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
+func newStringType() *StringType { return &StringType{} }
 
 func testType(t *testing.T, src, dst Type) {
 	b := bits.NewBuffer()

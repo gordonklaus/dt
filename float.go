@@ -1,40 +1,50 @@
 package data
 
 import (
+	"fmt"
+
 	"github.com/gordonklaus/data/bits"
 	"github.com/gordonklaus/data/types"
 )
 
-type Float32Value struct {
-	Type *types.Float32Type
-	X    float32
+type FloatValue struct {
+	Type *types.FloatType
+	x    float64
 }
 
-func NewFloat32Value(t *types.Float32Type) *Float32Value {
-	return &Float32Value{Type: t}
+func NewFloatValue(t *types.FloatType) *FloatValue {
+	return &FloatValue{Type: t}
 }
 
-func (f *Float32Value) Write(b *bits.Buffer) {
-	b.WriteFloat32(f.X)
+func (f *FloatValue) SetFloat32(x float32) {
+	if f.Type.Size != 32 {
+		panic(fmt.Sprintf("float has %d bits", f.Type.Size))
+	}
+	f.x = float64(x)
 }
 
-func (f *Float32Value) Read(b *bits.Buffer) error {
-	return b.ReadFloat32(&f.X)
+func (f *FloatValue) SetFloat64(x float64) {
+	if f.Type.Size != 64 {
+		panic(fmt.Sprintf("float has %d bits", f.Type.Size))
+	}
+	f.x = x
 }
 
-type Float64Value struct {
-	Type *types.Float64Type
-	X    float64
+func (f *FloatValue) Write(b *bits.Buffer) {
+	if f.Type.Size == 32 {
+		b.WriteFloat32(float32(f.x))
+	} else {
+		b.WriteFloat64(f.x)
+	}
 }
 
-func NewFloat64Value(t *types.Float64Type) *Float64Value {
-	return &Float64Value{Type: t}
-}
-
-func (f *Float64Value) Write(b *bits.Buffer) {
-	b.WriteFloat64(f.X)
-}
-
-func (f *Float64Value) Read(b *bits.Buffer) error {
-	return b.ReadFloat64(&f.X)
+func (f *FloatValue) Read(b *bits.Buffer) error {
+	if f.Type.Size == 32 {
+		var x float32
+		err := b.ReadFloat32(&x)
+		f.x = float64(x)
+		return err
+	} else {
+		return b.ReadFloat64(&f.x)
+	}
 }

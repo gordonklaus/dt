@@ -1,9 +1,5 @@
-- Only allow power-of-two int sizes (8, 16, 32, 64).  (But any size for Static ints.)
-	- Enforce this restriction via the UI and tooling, not the type system.
-	- And store ints as 8 payload bits + 1 continuation bit (so that those sizes are exactly represented)?  Not so important (and might have a detrimental effect by reducing the chance of byte-alignment).
-- Combine int and uint.
-- Combine float32 and float64.
-- Store packages on disk as Any values, so they are self-describing (or rather, self-identifying)?
+- Store ints as 8 payload bits + 1 continuation bit?
+- Store packages on disk as Any values, so they are self-describing (or rather, self-identifying).
 - Add generic types?  Use cases: AuthRequest[T], AuthResponse[T], CacheRequest[T], CacheResponse[T]. 
 	- Is metadata a better solution to these problems?  A protocol could specify its allowed metadata, instead of it being arbitrary (like HTTP, gRPC).
 	- Since these use cases come in XRequest/XResponse pairs, they would decorate functions or whole protocols.  The decorators are second-order functions.

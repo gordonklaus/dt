@@ -14,10 +14,8 @@ type Kind uint64
 
 const (
 	Bool Kind = iota
-	Uint
 	Int
-	Float32
-	Float64
+	Float
 
 	Enum
 	Struct
@@ -32,14 +30,10 @@ func (k Kind) String() string {
 	switch k {
 	case Bool:
 		return "bool"
-	case Uint:
-		return "uint"
 	case Int:
 		return "int"
-	case Float32:
-		return "float32"
-	case Float64:
-		return "float64"
+	case Float:
+		return "float"
 
 	case Enum:
 		return "enum"
@@ -67,14 +61,10 @@ func kind(t Type) Kind {
 	switch t.(type) {
 	case *BoolType:
 		return Bool
-	case *UintType:
-		return Uint
 	case *IntType:
 		return Int
-	case *Float32Type:
-		return Float32
-	case *Float64Type:
-		return Float64
+	case *FloatType:
+		return Float
 
 	case *EnumType:
 		return Enum
@@ -107,14 +97,10 @@ func NewType(k Kind) Type {
 	switch k {
 	case Bool:
 		return &BoolType{}
-	case Uint:
-		return &UintType{}
 	case Int:
 		return &IntType{}
-	case Float32:
-		return &Float32Type{}
-	case Float64:
-		return &Float64Type{}
+	case Float:
+		return &FloatType{}
 
 	case Enum:
 		return &EnumType{}

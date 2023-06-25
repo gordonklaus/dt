@@ -1,68 +1,51 @@
 package main
 
 import (
-	"strconv"
+	"fmt"
 
+	"gioui.org/io/key"
 	"gioui.org/layout"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
 )
 
 type IntTypeEditor struct {
-	typ  types.Type
-	size widget.Editor
+	typ *types.IntType
 }
 
-func NewIntTypeEditor(typ types.Type) *IntTypeEditor {
+func NewIntTypeEditor(typ *types.IntType) *IntTypeEditor {
 	return &IntTypeEditor{
 		typ: typ,
-		size: widget.Editor{
-			SingleLine: true,
-			// MaxLen:     2,
-			// Filter:     "0123456789",
-		},
 	}
 }
 
 func (i *IntTypeEditor) Type() types.Type { return i.typ }
 
 func (i *IntTypeEditor) Layout(gtx C) D {
-	var size uint64
-	switch t := i.typ.(type) {
-	case *types.UintType:
-		size = t.Size
-	case *types.IntType:
-		size = t.Size
-	}
-
-	for _, e := range i.size.Events() {
-		if _, ok := e.(widget.ChangeEvent); ok {
-			if x, err := strconv.ParseUint(i.size.Text(), 10, 64); err == nil {
-				size = x
-				if size == 0 || size > 64 {
-					size = 64
+	for _, e := range gtx.Events(i) {
+		if e, ok := e.(key.Event); ok && e.State == key.Press {
+			switch e.Name {
+			case "S":
+				i.typ.Size /= 2
+				if i.typ.Size < 8 {
+					i.typ.Size = 64
 				}
-				switch t := i.typ.(type) {
-				case *types.UintType:
-					t.Size = size
-				case *types.IntType:
-					t.Size = size
-				}
+			case "U":
+				i.typ.Unsigned = !i.typ.Unsigned
 			}
 		}
 	}
 
-	_, caret := i.size.CaretPos()
-	i.size.SetText(strconv.FormatUint(size, 10))
-	i.size.SetCaret(caret, caret)
+	key.InputOp{
+		Tag:  i,
+		Keys: "S|U",
+	}.Add(gtx.Ops)
 
-	s := "uint"
-	if _, ok := i.typ.(*types.IntType); ok {
-		s = "int"
+	s := fmt.Sprintf("int%d", i.typ.Size)
+	if i.typ.Unsigned {
+		s = "u" + s
 	}
 	return layout.Flex{}.Layout(gtx,
 		layout.Rigid(material.Body1(theme, s).Layout),
-		layout.Rigid(material.Editor(theme, &i.size, "").Layout),
 	)
 }

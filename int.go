@@ -7,32 +7,6 @@ import (
 	"github.com/gordonklaus/data/types"
 )
 
-type UintValue struct {
-	Type *types.UintType
-	i    uint64
-}
-
-func NewUintValue(t *types.UintType) *UintValue {
-	return &UintValue{Type: t}
-}
-
-func (i *UintValue) Get() uint64 { return i.i }
-
-func (i *UintValue) Set(x uint64) {
-	if x>>i.Type.Size > 0 {
-		panic(fmt.Sprintf("%d overflows %d-bit uint", x, i.Type.Size))
-	}
-	i.i = x
-}
-
-func (i *UintValue) Write(b *bits.Buffer) {
-	b.WriteVarUint(i.i)
-}
-
-func (i *UintValue) Read(b *bits.Buffer) error {
-	return b.ReadVarUint(&i.i, int(i.Type.Size))
-}
-
 type IntValue struct {
 	Type *types.IntType
 	i    int64
@@ -42,19 +16,54 @@ func NewIntValue(t *types.IntType) *IntValue {
 	return &IntValue{Type: t}
 }
 
-func (i *IntValue) Get() int64 { return i.i }
+func (i *IntValue) GetInt() int64 {
+	if i.Type.Unsigned {
+		panic(fmt.Sprintf("int is unsigned"))
+	}
+	return i.i
+}
+func (i *IntValue) GetUint() uint64 {
+	if !i.Type.Unsigned {
+		panic(fmt.Sprintf("int is signed"))
+	}
+	return uint64(i.i)
+}
 
-func (i *IntValue) Set(x int64) {
+func (i *IntValue) SetInt(x int64) {
+	if i.Type.Unsigned {
+		panic(fmt.Sprintf("int is unsigned"))
+	}
 	if y := x >> i.Type.Size; y > 0 || y < -1 {
 		panic(fmt.Sprintf("%d overflows %d-bit int", x, i.Type.Size))
 	}
 	i.i = x
 }
 
+func (i *IntValue) SetUint(x uint64) {
+	if !i.Type.Unsigned {
+		panic(fmt.Sprintf("int is signed"))
+	}
+	if x>>i.Type.Size > 0 {
+		panic(fmt.Sprintf("%d overflows %d-bit uint", x, i.Type.Size))
+	}
+	i.i = int64(x)
+}
+
 func (i *IntValue) Write(b *bits.Buffer) {
-	b.WriteVarInt(i.i)
+	if i.Type.Unsigned {
+		b.WriteVarUint(uint64(i.i))
+	} else {
+		b.WriteVarInt(i.i)
+	}
 }
 
 func (i *IntValue) Read(b *bits.Buffer) error {
-	return b.ReadVarInt(&i.i, int(i.Type.Size))
+	if i.Type.Unsigned {
+		var x uint64
+		err := b.ReadVarUint(&x, int(i.Type.Size))
+		i.i = int64(x)
+		return err
+	} else {
+		return b.ReadVarInt(&i.i, int(i.Type.Size))
+	}
 }

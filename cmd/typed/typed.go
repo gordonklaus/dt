@@ -56,9 +56,7 @@ func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 		items: []*typeMenuItem{
 			{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
 			{txt: "int", new: func() types.Type { return &types.IntType{Size: 64} }},
-			{txt: "uint", new: func() types.Type { return &types.UintType{Size: 64} }},
-			{txt: "float32", new: func() types.Type { return &types.Float32Type{} }},
-			{txt: "float64", new: func() types.Type { return &types.Float64Type{} }},
+			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
 			{txt: "string", new: func() types.Type { return &types.StringType{} }},
 			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
 			{txt: "option", new: func() types.Type { return &types.OptionType{} }},
@@ -90,10 +88,14 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	switch typ := typ.(type) {
 	case nil:
 		return nil
-	case *types.BoolType, *types.Float32Type, *types.Float64Type, *types.StringType:
-		return NewBasicTypeEditor(typ)
-	case *types.IntType, *types.UintType:
+	case *types.BoolType:
+		return NewBoolTypeEditor(typ)
+	case *types.IntType:
 		return NewIntTypeEditor(typ)
+	case *types.FloatType:
+		return NewFloatTypeEditor(typ)
+	case *types.StringType:
+		return NewStringTypeEditor(typ)
 	case *types.StructType:
 		return NewStructTypeEditor(typ, t.loader)
 	case *types.EnumType:

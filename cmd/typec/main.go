@@ -171,14 +171,13 @@ func (w *writer) writeType(t types.Type) {
 	switch t := t.(type) {
 	case *types.BoolType:
 		w.write("bool")
-	case *types.UintType:
-		w.writeUint(t)
 	case *types.IntType:
-		w.writeInt(t)
-	case *types.Float32Type:
-		w.write("float32")
-	case *types.Float64Type:
-		w.write("float64")
+		if t.Unsigned {
+			w.write("u")
+		}
+		w.write("int%d", t.Size)
+	case *types.FloatType:
+		w.write("float%d", t.Size)
 
 	case *types.ArrayType:
 		w.write("[]")
@@ -194,38 +193,18 @@ func (w *writer) writeType(t types.Type) {
 	}
 }
 
-func (w *writer) writeUint(t *types.UintType) {
-	for sz := uint64(8); sz <= 64; sz *= 2 {
-		if t.Size <= sz {
-			w.write("uint%d", sz)
-			return
-		}
-	}
-	log.Fatalf("invalid uint size %d", t.Size)
-}
-
-func (w *writer) writeInt(t *types.IntType) {
-	for sz := uint64(8); sz <= 64; sz *= 2 {
-		if t.Size <= sz {
-			w.write("int%d", sz)
-			return
-		}
-	}
-	log.Fatalf("invalid int size %d", t.Size)
-}
-
 func (w *writer) writeTypeWriter(t types.Type, v string) {
 	switch t := t.(type) {
 	case *types.BoolType:
 		w.writeln("b.WriteBool(%s)", v)
-	case *types.UintType:
-		w.writeln("b.WriteVarUint(%s)", v)
 	case *types.IntType:
-			w.writeln("b.WriteVarInt(%s)", v)
-	case *types.Float32Type:
-		w.writeln("b.WriteFloat32(%s)", v)
-	case *types.Float64Type:
-		w.writeln("b.WriteFloat64(%s)", v)
+		if t.Unsigned {
+			w.writeln("b.WriteVarUint(uint64(%s))", v)
+		} else {
+			w.writeln("b.WriteVarInt(int64(%s))", v)
+		}
+	case *types.FloatType:
+		w.writeln("b.WriteFloat%d(%s)", t.Size, v)
 
 	case *types.ArrayType:
 		w.writeln("b.WriteVarUint(uint64(len(%s)))", v)
@@ -280,17 +259,17 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	}
 
 	w.write("if err := ")
-	switch t.(type) {
+	switch t := t.(type) {
 	case *types.BoolType:
 		w.write("b.ReadBool(%s)", v)
-	case *types.UintType:
-		w.write("bits.ReadVarUint(b, %s)", v)
 	case *types.IntType:
-			w.write("bits.ReadVarInt(b, %s)", v)
-	case *types.Float32Type:
-		w.write("b.ReadFloat32(%s)", v)
-	case *types.Float64Type:
-		w.write("b.ReadFloat64(%s)", v)
+		if t.Unsigned {
+			w.writeln("bits.ReadVarUint(b, %s)", v)
+		} else {
+			w.writeln("bits.ReadVarInt(b, %s)", v)
+		}
+	case *types.FloatType:
+		w.write("b.ReadFloat%d(%s)", t.Size, v)
 
 	case *types.StringType:
 		w.write("b.ReadString(%s)", v)
