@@ -25,6 +25,8 @@ func NewValue(t types.Type) Value {
 		return NewEnumValue(t)
 	case *types.ArrayType:
 		return NewArrayValue(t)
+	case *types.MapType:
+		return NewMapValue(t)
 	case *types.NamedType:
 		return NewValue(t.Type)
 	}

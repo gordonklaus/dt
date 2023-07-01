@@ -94,6 +94,18 @@ func TestArray(t *testing.T) {
 	)
 }
 
+func TestMap(t *testing.T) {
+	at := &types.MapType{Key: intType, Value: stringType}
+	testValue(t,
+		&MapValue{Type: at, Elems: []MapElem{
+			{Key: newInt64(1), Value: newString("abc")},
+			{Key: newInt64(2), Value: newString("def")},
+			{Key: newInt64(3), Value: newString("ghi")},
+		}},
+		NewValue(at),
+	)
+}
+
 func newBool(b bool) *BoolValue {
 	x := NewBoolValue(boolType)
 	x.X = b

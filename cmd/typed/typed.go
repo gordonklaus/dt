@@ -49,6 +49,23 @@ func NewTypeNameTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	return t
 }
 
+func NewMapKeyTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := &TypeEditor{
+		typ:    typ,
+		loader: loader,
+		items: []*typeMenuItem{
+			{txt: "int", new: func() types.Type { return &types.IntType{} }},
+			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
+			{txt: "string", new: func() types.Type { return &types.StringType{} }},
+		},
+	}
+	t.menu.Options = mapSlice(t.items, func(i *typeMenuItem) func(C) D {
+		return component.MenuItem(theme, &i.c, i.txt).Layout
+	})
+	t.ed = t.newEditor(*typ)
+	return t
+}
+
 func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	t := &TypeEditor{
 		typ:    typ,
@@ -59,6 +76,7 @@ func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
 			{txt: "string", new: func() types.Type { return &types.StringType{} }},
 			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
+			{txt: "map", new: func() types.Type { return &types.MapType{} }},
 			{txt: "option", new: func() types.Type { return &types.OptionType{} }},
 		},
 	}
@@ -102,6 +120,8 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 		return NewEnumTypeEditor(typ, t.loader)
 	case *types.ArrayType:
 		return NewArrayTypeEditor(typ, t.loader)
+	case *types.MapType:
+		return NewMapTypeEditor(typ, t.loader)
 	case *types.OptionType:
 		return NewOptionTypeEditor(typ, t.loader)
 	case *types.NamedType:

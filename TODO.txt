@@ -2,11 +2,17 @@
 	- Add a Bytes type that is written byte-aligned?
 	- Add a ByteAlign type that is logically empty but inserts enough bits to byte-align the next item? (+1, seems most generic)
 	- Add ArrayType.ByteAlign?
-- Map type
+	- A message containing byte-aligned data cannot be bit-shifted without becoming unreadable.  Unless the padding size is explicit.  Is this a real issue?
 - Add generic types?  Use cases: AuthRequest[T], AuthResponse[T], CacheRequest[T], CacheResponse[T]. 
 	- Is metadata a better solution to these problems?  A protocol could specify its allowed metadata, instead of it being arbitrary (like HTTP, gRPC).
 	- Since these use cases come in XRequest/XResponse pairs, they would decorate functions or whole protocols.  The decorators are second-order functions.
 - Store packages on disk as Any values, so they are self-describing (or rather, self-identifying).
+- Add (optional) (mutable?) {String,Array,Map}.MaxSize to prevent generated readers from allocating arbitrarily large amounts of memory.
+	- Readers and writers should fail if this size is exceeded.
+		- Writers need to return an error (probably a good design, anyway), or String,Array,Map setters should validate size.
+	- Or, better: readers should only allocate some maximum (configurable) size initially, and grow this size as elements are read.  This way, the actual allocated size is limited by the payload size.
+		- bits.Buffer.ReadString should follow the same strategy.
+		- The initial size can be based on the size of the remaining buffer to be read (and an error can be returned if this is exceeded).
 
 - Add DisplayIndex to StructField and EnumElement (for documentation purposes only - serialization order is array order)?
 - typEd UI design idea:  lay out types just as they would be positioned in a text format (indented lines of text) and with similar keyboard navigation, for familiarity's sake

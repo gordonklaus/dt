@@ -17,6 +17,10 @@ func TestType(t *testing.T) {
 		&ArrayType{},
 	)
 	testType(t,
+		&MapType{Key: newStringType(), Value: newFloat64Type()},
+		&MapType{},
+	)
+	testType(t,
 		&EnumType{Elems: []*EnumElemType{
 			{Name: "x", Type: newFloat64Type()},
 			{Name: "y", Type: newBoolType()},

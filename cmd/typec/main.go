@@ -64,10 +64,14 @@ func (w *writer) writePackage(p *types.Package) {
 	w.writeln(`"fmt"`)
 	w.writeln(``)
 	w.writeln(`"github.com/gordonklaus/data/bits"`)
+	w.writeln(`"golang.org/x/exp/maps"`)
+	w.writeln(`"golang.org/x/exp/slices"`)
 	w.writeln(`)`)
 	w.writeln("var (")
 	w.writeln("_ = fmt.Print")
 	w.writeln("_ = bits.NewBuffer")
+	w.writeln("_ = maps.Keys[map[int]int]")
+	w.writeln("_ = slices.Sort[int]")
 	w.writeln(")")
 	for _, n := range p.Types {
 		name := camel(n.Name)
@@ -183,6 +187,11 @@ func (w *writer) writeType(t types.Type) {
 	case *types.ArrayType:
 		w.write("[]")
 		w.writeType(t.Elem)
+	case *types.MapType:
+		w.write("map[")
+		w.writeType(t.Key)
+		w.write("]")
+		w.writeType(t.Value)
 
 	case *types.OptionType:
 		w.write("*")
@@ -211,6 +220,16 @@ func (w *writer) writeTypeWriter(t types.Type, v string) {
 		w.writeln("b.WriteVarUint(uint64(len(%s)))", v)
 		w.writeln("for _, x := range %s {", v)
 		w.writeTypeWriter(t.Elem, "x")
+		w.writeln("}")
+	case *types.MapType:
+		w.writeln("{")
+		w.writeln("b.WriteVarUint(uint64(len(%s)))", v)
+		w.writeln("keys := maps.Keys(%s)", v)
+		w.writeln("slices.Sort(keys)")
+		w.writeln("for _, k := range keys {")
+		w.writeTypeWriter(t.Key, "k")
+		w.writeTypeWriter(t.Value, v+"[k]")
+		w.writeln("}")
 		w.writeln("}")
 
 	case *types.OptionType:
@@ -244,6 +263,24 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 		w.writeln("for i := range %s {", v)
 		w.writeTypeReader(t.Elem, "&("+v+")[i]")
 		w.writeln("}}")
+		return
+	case *types.MapType:
+		v = indirect(v)
+		w.writeln("{var len uint64")
+		w.writeln("if err := b.ReadVarUint(&len); err != nil { return err }")
+		w.write("%s = make(", v)
+		w.writeType(t)
+		w.writeln(", len)")
+		w.writeln("for i := len; i > 0; i-- {")
+		w.write("var k ")
+		w.writeType(t.Key)
+		w.writeln("")
+		w.writeTypeReader(t.Key, "&k")
+		w.write("var v ")
+		w.writeType(t.Value)
+		w.writeln("")
+		w.writeTypeReader(t.Value, "&v")
+		w.writeln("%s[k]=v}}", v)
 		return
 
 	case *types.OptionType:

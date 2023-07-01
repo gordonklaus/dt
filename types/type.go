@@ -20,6 +20,7 @@ const (
 	Enum
 	Struct
 	Array
+	Map
 
 	Option
 	String
@@ -41,6 +42,8 @@ func (k Kind) String() string {
 		return "struct"
 	case Array:
 		return "array"
+	case Map:
+		return "map"
 
 	case Option:
 		return "option"
@@ -72,6 +75,8 @@ func kind(t Type) Kind {
 		return Struct
 	case *ArrayType:
 		return Array
+	case *MapType:
+		return Map
 
 	case *OptionType:
 		return Option
@@ -108,6 +113,8 @@ func NewType(k Kind) Type {
 		return &StructType{}
 	case Array:
 		return &ArrayType{}
+	case Map:
+		return &MapType{}
 
 	case Option:
 		return &OptionType{}
