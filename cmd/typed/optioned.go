@@ -14,7 +14,7 @@ type OptionTypeEditor struct {
 func NewOptionTypeEditor(typ *types.OptionType, loader *types.Loader) *OptionTypeEditor {
 	return &OptionTypeEditor{
 		typ: typ,
-		val: NewTypeEditor(&typ.ValueType, loader),
+		val: NewTypeEditor(&typ.Elem, loader),
 	}
 }
 

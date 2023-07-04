@@ -12,7 +12,7 @@ type StructValue struct {
 }
 
 type StructFieldValue struct {
-	*types.StructFieldType
+	Type  *types.StructFieldType
 	Value Value
 }
 
@@ -23,8 +23,8 @@ func NewStructValue(t *types.StructType) *StructValue {
 	}
 	for i, f := range t.Fields {
 		s.Fields[i] = &StructFieldValue{
-			StructFieldType: f,
-			Value:           NewValue(f.Type),
+			Type:  f,
+			Value: NewValue(f.Type),
 		}
 	}
 	return s

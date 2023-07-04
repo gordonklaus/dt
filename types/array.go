@@ -3,7 +3,7 @@ package types
 import "github.com/gordonklaus/data/bits"
 
 type ArrayType struct {
-	Elem Type
+	Elem Type // not *EnumType or *StructType
 }
 
 func (a *ArrayType) Write(b *bits.Buffer) {

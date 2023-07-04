@@ -57,7 +57,7 @@ type PackageID interface {
 	Read(*bits.Buffer) error
 }
 
-type PackageID_Current struct{} // TODO: Replace with PackageID_SourceControl.
+type PackageID_Current struct{}
 
 func (*PackageID_Current) Write(b *bits.Buffer) {
 	b.WriteSize(func() {})

@@ -3,7 +3,8 @@ package types
 import "github.com/gordonklaus/data/bits"
 
 type MapType struct {
-	Key, Value Type // Key is *IntType, *FloatType, or *StringType
+	Key   Type // *IntType, *FloatType, or *StringType
+	Value Type // not *EnumType or *StructType
 }
 
 func (m *MapType) Write(b *bits.Buffer) {

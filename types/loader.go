@@ -65,7 +65,7 @@ func (l *Loader) setNamedTypes(t Type) error {
 	case *ArrayType:
 		return l.setNamedTypes(t.Elem)
 	case *OptionType:
-		return l.setNamedTypes(t.ValueType)
+		return l.setNamedTypes(t.Elem)
 	case *NamedType:
 		p, err := l.Load(t.Package)
 		if err != nil {

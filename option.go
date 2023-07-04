@@ -6,14 +6,14 @@ import (
 )
 
 type OptionValue struct {
-	*types.OptionType
-	Value Value
+	Type *types.OptionType
+	Elem Value
 }
 
 func (o *OptionValue) Write(b *bits.Buffer) {
-	b.WriteBool(o.Value != nil)
-	if o.Value != nil {
-		o.Value.Write(b)
+	b.WriteBool(o.Elem != nil)
+	if o.Elem != nil {
+		o.Elem.Write(b)
 	}
 }
 
@@ -22,8 +22,8 @@ func (o *OptionValue) Read(b *bits.Buffer) error {
 	if err := b.ReadBool(&ok); err != nil {
 		return err
 	} else if ok {
-		o.Value = NewValue(o.ValueType)
-		return o.Value.Read(b)
+		o.Elem = NewValue(o.Type.Elem)
+		return o.Elem.Read(b)
 	}
 	return nil
 }

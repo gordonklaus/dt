@@ -16,7 +16,9 @@ import (
 )
 
 func main() {
+	out := flag.String("out", ".", "output directory")
 	flag.Parse()
+
 	dir := "."
 	if flag.NArg() > 0 {
 		dir = flag.Arg(0)
@@ -32,15 +34,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	path := filepath.Join(dir, "internal")
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+	if err := os.MkdirAll(*out, os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 
 	w := &writer{}
 	w.writePackage(pkg)
 	buf := gofmt(gofmt(w.buf.Bytes())) // twice because gofmt isn't quite idempotent
-	if err := ioutil.WriteFile(filepath.Join(path, "dt.go"), buf, fs.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(*out, "pkg.dt.go"), buf, fs.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -195,7 +196,7 @@ func (w *writer) writeType(t types.Type) {
 
 	case *types.OptionType:
 		w.write("*")
-		w.writeType(t.ValueType)
+		w.writeType(t.Elem)
 	case *types.StringType:
 		w.write("string")
 	case *types.NamedType:
@@ -235,7 +236,7 @@ func (w *writer) writeTypeWriter(t types.Type, v string) {
 	case *types.OptionType:
 		w.writeln("b.WriteBool(%s != nil)", v)
 		w.writeln("if %s != nil {", v)
-		w.writeTypeWriter(t.ValueType, "*"+v)
+		w.writeTypeWriter(t.Elem, "*"+v)
 		w.writeln("}")
 	case *types.StringType:
 		w.writeln("b.WriteString(%s)", v)
@@ -289,9 +290,9 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 		w.writeln("if err := b.ReadBool(&ok); err != nil { return err }")
 		w.writeln("if ok {")
 		w.write("%s = new(", v)
-		w.writeType(t.ValueType)
+		w.writeType(t.Elem)
 		w.writeln(")")
-		w.writeTypeReader(t.ValueType, v)
+		w.writeTypeReader(t.Elem, v)
 		w.writeln("}}")
 		return
 	}

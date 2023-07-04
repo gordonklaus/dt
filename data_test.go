@@ -77,8 +77,8 @@ func TestStruct(t *testing.T) {
 	sv = NewValue(st).(*StructValue)
 	sv.Fields[1].Value = newString("!#%^")
 	sv.Fields = append(sv.Fields, &StructFieldValue{
-		StructFieldType: &types.StructFieldType{Type: intType},
-		Value:           newInt64(9),
+		Type:  &types.StructFieldType{Type: intType},
+		Value: newInt64(9),
 	})
 	expect := NewValue(st).(*StructValue)
 	expect.Fields[1].Value = sv.Fields[1].Value
