@@ -10,6 +10,7 @@ import (
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
+	"gioui.org/io/key"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -70,6 +71,9 @@ func Main() {
 		case system.FrameEvent:
 			ops.Reset()
 			gtx := layout.NewContext(&ops, e)
+
+			key.InputOp{Tag: w, Keys: "Tab"}.Add(gtx.Ops) // Disable tab navigation globally.
+
 			layout.Center.Layout(gtx, ed.Layout)
 			e.Frame(&ops)
 		case system.DestroyEvent:

@@ -39,21 +39,23 @@ func TestBasic(t *testing.T) {
 
 func TestEnum(t *testing.T) {
 	et := &types.EnumType{Elems: []*types.EnumElemType{
-		{Type: intType},
-		{Type: stringType},
-		{Type: boolType},
+		{Type: types.StructType{Fields: []*types.StructFieldType{{Type: intType}}}},
+		{Type: types.StructType{Fields: []*types.StructFieldType{{Type: stringType}}}},
+		{Type: types.StructType{Fields: []*types.StructFieldType{{Type: boolType}}}},
 	}}
 
 	ev := NewValue(et).(*EnumValue)
 	ev.Elem = 1
-	ev.Value = newString("abc")
+	ev.Value = NewStructValue(&et.Elems[1].Type)
+	ev.Value.Fields[0].Value = newString("abc")
 	testValue(t, ev, NewValue(et))
 
 	ev.Elem = 4
-	ev.Value = newUint64(42)
+	ev.Value.Fields[0].Value = newUint64(42)
 	expect := NewValue(et).(*EnumValue)
 	expect.Elem = 4
-	expect.Value = &UnknownEnumElement{}
+	expect.Value = NewStructValue(&UnknownEnumElementType)
+	expect.Value.HasUnknownFields = true
 	testValueExpect(t, ev, NewValue(et), expect)
 }
 

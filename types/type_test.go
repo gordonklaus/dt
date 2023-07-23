@@ -22,8 +22,8 @@ func TestType(t *testing.T) {
 	)
 	testType(t,
 		&EnumType{Elems: []*EnumElemType{
-			{Name: "x", Type: newFloat64Type()},
-			{Name: "y", Type: newBoolType()},
+			{Name: "x", Type: StructType{Fields: []*StructFieldType{{Type: newFloat64Type()}}}},
+			{Name: "y", Type: StructType{Fields: []*StructFieldType{{Type: newBoolType()}}}},
 		}},
 		&EnumType{},
 	)

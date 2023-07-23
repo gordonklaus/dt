@@ -56,7 +56,8 @@ func gofmt(src []byte) []byte {
 }
 
 type writer struct {
-	buf bytes.Buffer
+	buf   bytes.Buffer
+	varID int
 }
 
 func (w *writer) writePackage(p *types.Package) {
@@ -81,7 +82,7 @@ func (w *writer) writePackage(p *types.Package) {
 		case *types.EnumType:
 			w.writeEnum(t, name)
 		case *types.StructType:
-			w.writeStruct(t, name, false)
+			w.writeStruct(t, name)
 		default:
 			panic(fmt.Sprintf("unexpected type %T", t))
 		}
@@ -124,17 +125,11 @@ func (w *writer) writeEnum(t *types.EnumType, name string) {
 	w.writeln("}\n")
 
 	for i, e := range t.Elems {
-		isStruct := false
-		if nt, ok := e.Type.(*types.NamedType); ok {
-			_, isStruct = nt.Type.(*types.StructType)
-		}
-		w.writeStruct(&types.StructType{Fields: []*types.StructFieldType{
-			{Name: e.Name, Type: e.Type},
-		}}, ename[i], isStruct)
+		w.writeStruct(&e.Type, ename[i])
 	}
 }
 
-func (w *writer) writeStruct(t *types.StructType, name string, omitSize bool) {
+func (w *writer) writeStruct(t *types.StructType, name string) {
 	fname := make([]string, len(t.Fields))
 
 	w.write("type %s struct {", name)
@@ -147,29 +142,17 @@ func (w *writer) writeStruct(t *types.StructType, name string, omitSize bool) {
 	w.writeln("}")
 
 	w.writeln("func (x *%s) Write(b *bits.Buffer) {", name)
-	if !omitSize {
-		w.writeln("b.WriteSize(func() {")
-	}
 	for i, f := range t.Fields {
 		w.writeTypeWriter(f.Type, "x."+fname[i])
 	}
-	if !omitSize {
-		w.writeln("})")
-	}
 	w.writeln("}\n")
 
+	w.varID = 0
 	w.writeln("func (x *%s) Read(b *bits.Buffer) error {", name)
-	if !omitSize {
-		w.writeln("return b.ReadSize(func() error {")
-	}
 	for i, f := range t.Fields {
 		w.writeTypeReader(f.Type, "&x."+fname[i])
 	}
-	w.writeln("return nil")
-	if !omitSize {
-		w.writeln("})")
-	}
-	w.writeln("}\n")
+	w.writeln("return nil}\n")
 }
 
 func (w *writer) writeType(t types.Type) {
@@ -277,11 +260,13 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 		w.writeType(t.Key)
 		w.writeln("")
 		w.writeTypeReader(t.Key, "&k")
-		w.write("var v ")
+		varID := w.varID
+		w.varID++
+		w.write("var v%d ", varID)
 		w.writeType(t.Value)
 		w.writeln("")
-		w.writeTypeReader(t.Value, "&v")
-		w.writeln("%s[k]=v}}", v)
+		w.writeTypeReader(t.Value, fmt.Sprintf("&v%d", varID))
+		w.writeln("%s[k]=v%d}}", v, varID)
 		return
 
 	case *types.OptionType:

@@ -4,6 +4,7 @@ import (
 	"image"
 
 	"gioui.org/f32"
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
@@ -16,13 +17,15 @@ import (
 )
 
 type EnumTypeEditor struct {
+	parent *TypeEditor
 	typ    *types.EnumType
 	loader *types.Loader
 	elems  []*EnumElemTypeEditor
 }
 
-func NewEnumTypeEditor(typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
+func NewEnumTypeEditor(parent *TypeEditor, typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
 	s := &EnumTypeEditor{
+		parent: parent,
 		typ:    typ,
 		loader: loader,
 		elems:  make([]*EnumElemTypeEditor, len(typ.Elems)),
@@ -35,24 +38,48 @@ func NewEnumTypeEditor(typ *types.EnumType, loader *types.Loader) *EnumTypeEdito
 
 func (e *EnumTypeEditor) Type() types.Type { return e.typ }
 
-func (e *EnumTypeEditor) insertElem(f *EnumElemTypeEditor) {
-	for i, f2 := range e.elems {
-		if f2 == f {
-			elem := &types.EnumElemType{}
-			e.typ.Elems = slices.Insert(e.typ.Elems, i+1, elem)
-			e.elems = slices.Insert(e.elems, i+1, NewEnumElemTypeEditor(e, elem, e.loader))
-			break
-		}
+func (e *EnumTypeEditor) Focus() {
+	if len(e.elems) == 0 {
+		e.insertElem(nil, false)
+	} else {
+		e.elems[0].Focus()
 	}
 }
 
-func (e *EnumTypeEditor) deleteElem(f *EnumElemTypeEditor) {
-	for i, f2 := range e.elems {
-		if f2 == f {
-			e.typ.Elems = slices.Delete(e.typ.Elems, i, i+1)
-			e.elems = slices.Delete(e.elems, i, i+1)
-			break
-		}
+func (e *EnumTypeEditor) focusNext(el *EnumElemTypeEditor, next bool) {
+	i := slices.Index(e.elems, el) - 1
+	if next {
+		i += 2
+	}
+	if i < 0 {
+		e.parent.parent.(*TypeNameEditor).focusTyped.Focus()
+	} else if i < len(e.elems) {
+		e.elems[i].Focus()
+	}
+}
+
+func (e *EnumTypeEditor) insertElem(el *EnumElemTypeEditor, before bool) {
+	i := slices.Index(e.elems, el)
+	if !before {
+		i++
+	}
+	elem := &types.EnumElemType{}
+	e.typ.Elems = slices.Insert(e.typ.Elems, i, elem)
+	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.loader))
+	e.elems[i].named.Focus()
+}
+
+func (e *EnumTypeEditor) deleteElem(el *EnumElemTypeEditor, back bool) {
+	i := slices.Index(e.elems, el)
+	e.typ.Elems = slices.Delete(e.typ.Elems, i, i+1)
+	e.elems = slices.Delete(e.elems, i, i+1)
+	if i > 0 && (back || i >= len(e.elems)) {
+		i--
+	}
+	if i < len(e.elems) {
+		e.elems[i].Focus()
+	} else {
+		e.parent.parent.(*TypeNameEditor).focusTyped.Focus()
 	}
 }
 
@@ -75,18 +102,21 @@ func (e *EnumTypeEditor) Layout(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, elems...)
 	})
 
-	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(material.Body1(theme, "enum ").Layout),
+	return layout.Flex{
+		Axis:      layout.Vertical,
+		Alignment: layout.Middle,
+	}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			width := gtx.Dp(16)
-			height := elemsRec.Dims.Size.Y + gtx.Dp(8)
-			w := float32(width)
-			h2 := float32(height) / 2
+			width := elemsRec.Dims.Size.X + gtx.Dp(8)
+			height := gtx.Dp(16)
+			w2 := float32(width) / 2
+			h := float32(height)
+			d := float32(gtx.Dp(4))
 			path := clip.Path{}
 			path.Begin(gtx.Ops)
-			path.Move(f32.Pt(w, 0))
-			path.Cube(f32.Pt(-w, 0), f32.Pt(0, h2), f32.Pt(-w, h2))
-			path.Cube(f32.Pt(w, 0), f32.Pt(0, h2), f32.Pt(w, h2))
+			path.Move(f32.Pt(0, h))
+			path.Cube(f32.Pt(0, -h-d), f32.Pt(w2, d), f32.Pt(w2, -h))
+			path.Cube(f32.Pt(0, h+d), f32.Pt(w2, -d), f32.Pt(w2, h))
 			paint.FillShape(gtx.Ops, theme.Fg, clip.Stroke{
 				Path:  path.End(),
 				Width: float32(gtx.Dp(1)),
@@ -101,9 +131,12 @@ type EnumElemTypeEditor struct {
 	parent *EnumTypeEditor
 	typ    *types.EnumElemType
 	named  widget.Editor
-	typed  *TypeEditor
+	typed  *StructTypeEditor
 
 	nameRec Recording
+
+	KeyFocus
+	focusNamed KeyFocus
 }
 
 func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, loader *types.Loader) *EnumElemTypeEditor {
@@ -115,8 +148,8 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, load
 			SingleLine: true,
 			Submit:     true,
 		},
-		typed: NewTypeEditor(&typ.Type, loader),
 	}
+	f.typed = NewStructTypeEditor(f, &typ.Type, loader)
 	f.named.SetText(typ.Name)
 	return f
 }
@@ -127,24 +160,70 @@ func (e *EnumElemTypeEditor) LayoutName(gtx C) int {
 }
 
 func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
-	for _, ev := range e.named.Events() {
-		switch ev := ev.(type) {
-		case widget.ChangeEvent:
-			e.typ.Name = e.named.Text()
-		case widget.SubmitEvent:
-			if ev.Text == "" {
-				e.parent.deleteElem(e)
-			} else {
-				e.parent.insertElem(e)
+	for _, ev := range e.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]|⎋") {
+		switch ev.Name {
+		case "←":
+			e.focusNamed.Focus()
+		case "→":
+			e.typed.Focus()
+		case "↑":
+			e.parent.focusNext(e, false)
+		case "↓":
+			e.parent.focusNext(e, true)
+		case "⏎", "⌤":
+			e.parent.insertElem(e, ev.Modifiers == key.ModShift)
+		case "⌫", "⌦":
+			e.parent.deleteElem(e, (ev.Name == "⌦") == (ev.Modifiers == key.ModShift))
+		case "⎋":
+			if e.named.Focused() {
+				e.named.SetText(e.typ.Name)
+				e.Focus()
 			}
 		}
 	}
 
+	for _, ev := range e.focusNamed.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+		switch ev.Name {
+		case "→":
+			e.Focus()
+		case "←", "↑":
+			e.parent.focusNext(e, false)
+		case "↓":
+			e.parent.focusNext(e, true)
+		case "⏎", "⌤", "⌫", "⌦":
+			e.named.SetCaret(e.named.Len(), e.named.Len())
+			e.named.Focus()
+		}
+	}
+
+	for _, ev := range e.named.Events() {
+		switch ev := ev.(type) {
+		case widget.SubmitEvent:
+			if validName(ev.Text) {
+				e.typ.Name = ev.Text
+				e.Focus()
+			}
+		}
+	}
+
+	if e.Focused() && e.typ.Name == "" {
+		e.parent.deleteElem(e, true)
+	}
+
 	indent := unit.Dp(float32(nameWidth-e.nameRec.Dims.Size.X) / gtx.Metric.PxPerDp)
-	return layout.Flex{}.Layout(gtx,
-		layout.Rigid(layout.Spacer{Width: indent}.Layout),
-		layout.Rigid(e.nameRec.Layout),
-		layout.Rigid(layout.Spacer{Width: 8}.Layout),
-		layout.Rigid(e.typed.Layout),
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(layout.Spacer{Height: 4}.Layout),
+		layout.Rigid(func(gtx C) D {
+			return e.KeyFocus.Layout(gtx, func(gtx C) D {
+				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(layout.Spacer{Width: indent}.Layout),
+					layout.Rigid(func(gtx C) D {
+						return e.focusNamed.Layout(gtx, e.nameRec.Layout)
+					}),
+					layout.Rigid(layout.Spacer{Width: 8}.Layout),
+					layout.Rigid(e.typed.Layout),
+				)
+			})
+		}),
 	)
 }

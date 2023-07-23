@@ -17,6 +17,7 @@ func NewPackageEditor(pkg *types.Package, typ *types.TypeName, loader *types.Loa
 		loader: loader,
 		ed:     NewTypeNameEditor(typ, loader),
 	}
+	ed.ed.focusTyped.Focus()
 	return ed
 }
 
