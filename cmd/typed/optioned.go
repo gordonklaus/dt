@@ -21,7 +21,7 @@ func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *type
 	}
 	o.elem = NewTypeEditor(o, &typ.Elem, loader)
 	if typ.Elem == nil {
-		o.elem.showMenu = true
+		o.elem.Edit()
 	}
 	return o
 }
@@ -29,32 +29,23 @@ func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *type
 func (o *OptionTypeEditor) Type() types.Type { return o.typ }
 
 func (o *OptionTypeEditor) Layout(gtx C) D {
-	for _, e := range o.KeyFocus.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range o.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
-			if ed, ok := o.elem.ed.(interface{ Focus() }); ok {
+			if ed, ok := o.elem.ed.(Focuser); ok {
 				ed.Focus()
 			}
 		case "←":
-			switch p := o.parent.parent.(type) {
-			case *StructFieldTypeEditor:
-				p.focusTyped.Focus()
-			case interface{ Focus() }:
-				p.Focus()
-			}
-			// case "↑":
-			// 	o.parent.focusNext(false)
-			// case "↓":
-			// 	o.parent.focusNext(true)
+			o.parent.parent.Focus()
 		case "⏎", "⌤", "⌫", "⌦":
-			o.elem.showMenu = true
+			o.elem.Edit()
 		}
 	}
 
 	if o.Focused() && o.typ.Elem == nil {
 		*o.parent.typ = nil
 		o.parent.ed = nil
-		o.parent.showMenu = true
+		o.parent.Edit()
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

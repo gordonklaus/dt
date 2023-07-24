@@ -21,7 +21,7 @@ func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, loader *types.
 	}
 	a.elem = NewTypeEditor(a, &typ.Elem, loader)
 	if typ.Elem == nil {
-		a.elem.showMenu = true
+		a.elem.Edit()
 	}
 	return a
 }
@@ -29,32 +29,23 @@ func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, loader *types.
 func (a *ArrayTypeEditor) Type() types.Type { return a.typ }
 
 func (a *ArrayTypeEditor) Layout(gtx C) D {
-	for _, e := range a.KeyFocus.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range a.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
-			if ed, ok := a.elem.ed.(interface{ Focus() }); ok {
+			if ed, ok := a.elem.ed.(Focuser); ok {
 				ed.Focus()
 			}
 		case "←":
-			switch p := a.parent.parent.(type) {
-			case *StructFieldTypeEditor:
-				p.focusTyped.Focus()
-			case interface{ Focus() }:
-				p.Focus()
-			}
-			// case "↑":
-			// 	a.parent.focusNext(false)
-			// case "↓":
-			// 	a.parent.focusNext(true)
+			a.parent.parent.Focus()
 		case "⏎", "⌤", "⌫", "⌦":
-			a.elem.showMenu = true
+			a.elem.Edit()
 		}
 	}
 
 	if a.Focused() && a.typ.Elem == nil {
 		*a.parent.typ = nil
 		a.parent.ed = nil
-		a.parent.showMenu = true
+		a.parent.Edit()
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

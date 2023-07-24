@@ -21,11 +21,11 @@ func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, loader *types.Load
 		typ:    typ,
 	}
 	m.key = NewMapKeyTypeEditor(m, &typ.Key, loader)
-	m.value = NewTypeEditor(m, &typ.Value, loader)
+	m.value = NewTypeEditor(&m.focusValue, &typ.Value, loader)
 	if typ.Key == nil {
-		m.key.showMenu = true
+		m.key.Edit()
 	} else if typ.Value == nil {
-		m.value.showMenu = true
+		m.value.Edit()
 	}
 	return m
 }
@@ -33,40 +33,27 @@ func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, loader *types.Load
 func (m *MapTypeEditor) Type() types.Type { return m.typ }
 
 func (m *MapTypeEditor) Layout(gtx C) D {
-	for _, e := range m.KeyFocus.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range m.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
 			m.focusValue.Focus()
 		case "←":
-			switch p := m.parent.parent.(type) {
-			case *StructFieldTypeEditor:
-				p.focusTyped.Focus()
-			case interface{ Focus() }:
-				p.Focus()
-			}
-			// case "↑":
-			// 	m.parent.focusNext(false)
-			// case "↓":
-			// 	m.parent.focusNext(true)
+			m.parent.parent.Focus()
 		case "⏎", "⌤", "⌫", "⌦":
-			m.key.showMenu = true
+			m.key.Edit()
 		}
 	}
 
-	for _, e := range m.focusValue.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range m.focusValue.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
-			if ed, ok := m.value.ed.(interface{ Focus() }); ok {
+			if ed, ok := m.value.ed.(Focuser); ok {
 				ed.Focus()
 			}
 		case "←":
 			m.Focus()
-			// case "↑":
-			// 	a.parent.focusNext(false)
-			// case "↓":
-			// 	a.parent.focusNext(true)
 		case "⏎", "⌤", "⌫", "⌦":
-			m.value.showMenu = true
+			m.value.Edit()
 		}
 	}
 
@@ -74,16 +61,16 @@ func (m *MapTypeEditor) Layout(gtx C) D {
 		if m.typ.Key == nil {
 			*m.parent.typ = nil
 			m.parent.ed = nil
-			m.parent.showMenu = true
+			m.parent.Edit()
 		} else if m.typ.Value == nil {
-			m.value.showMenu = true
+			m.value.Edit()
 		}
 	}
 
 	if m.focusValue.Focused() && m.typ.Value == nil {
 		*m.key.typ = nil
 		m.key.ed = nil
-		m.key.showMenu = true
+		m.key.Edit()
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

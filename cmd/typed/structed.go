@@ -8,22 +8,20 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
 	"golang.org/x/exp/slices"
 )
 
 type StructTypeEditor struct {
-	parent any
+	parent Focuser
 	typ    *types.StructType
 	loader *types.Loader
 	fields []*StructFieldTypeEditor
 }
 
-func NewStructTypeEditor(parent any, typ *types.StructType, loader *types.Loader) *StructTypeEditor {
+func NewStructTypeEditor(parent Focuser, typ *types.StructType, loader *types.Loader) *StructTypeEditor {
 	s := &StructTypeEditor{
 		parent: parent,
 		typ:    typ,
@@ -42,7 +40,7 @@ func (s *StructTypeEditor) Focus() {
 	if len(s.fields) == 0 {
 		s.insertField(nil, false)
 	} else {
-		s.fields[len(s.fields)/2].Focus()
+		s.fields[(len(s.fields)-1)/2].Focus()
 	}
 }
 
@@ -52,12 +50,7 @@ func (s *StructTypeEditor) focusNext(f *StructFieldTypeEditor, next bool) {
 		i += 2
 	}
 	if i < 0 {
-		switch p := s.parent.(type) {
-		case *EnumElemTypeEditor:
-			p.parent.focusNext(p, next)
-		case *TypeEditor:
-			p.parent.(*TypeNameEditor).focusTyped.Focus()
-		}
+		s.parent.Focus()
 	} else if i < len(s.fields) {
 		s.fields[i].Focus()
 	} else {
@@ -89,12 +82,7 @@ func (s *StructTypeEditor) deleteField(f *StructFieldTypeEditor, back bool) {
 	if i < len(s.fields) {
 		s.fields[i].Focus()
 	} else {
-		switch p := s.parent.(type) {
-		case *EnumElemTypeEditor:
-			p.parent.Focus()
-		case *TypeEditor:
-			p.parent.(*TypeNameEditor).focusTyped.Focus()
-		}
+		s.parent.Focus()
 	}
 }
 
@@ -119,7 +107,7 @@ func (s *StructTypeEditor) Layout(gtx C) D {
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(func(gtx C) D {
-			if len(fields) == 0 {
+			if _, ok := s.parent.(*EnumElemTypeEditor); ok && len(fields) == 0 {
 				return D{}
 			}
 			width := gtx.Dp(12)
@@ -146,7 +134,7 @@ func (s *StructTypeEditor) Layout(gtx C) D {
 type StructFieldTypeEditor struct {
 	parent *StructTypeEditor
 	typ    *types.StructFieldType
-	named  widget.Editor
+	named  editor
 	typed  *TypeEditor
 
 	nameRec Recording
@@ -159,11 +147,7 @@ func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldTy
 	f := &StructFieldTypeEditor{
 		parent: parent,
 		typ:    typ,
-		named: widget.Editor{
-			Alignment:  text.End,
-			SingleLine: true,
-			Submit:     true,
-		},
+		named:  newEditor(),
 	}
 	f.typed = NewTypeEditor(f, &typ.Type, loader)
 	f.named.SetText(typ.Name)
@@ -171,12 +155,12 @@ func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldTy
 }
 
 func (f *StructFieldTypeEditor) LayoutName(gtx C) int {
-	f.nameRec = Record(gtx, material.Editor(theme, &f.named, "").Layout)
+	f.nameRec = Record(gtx, f.named.Layout)
 	return f.nameRec.Dims.Size.X
 }
 
 func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
-	for _, e := range f.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]|⎋") {
+	for _, e := range f.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]") {
 		switch e.Name {
 		case "←":
 			f.focusNamed.Focus()
@@ -190,49 +174,34 @@ func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
 			f.parent.insertField(f, e.Modifiers == key.ModShift)
 		case "⌫", "⌦":
 			f.parent.deleteField(f, (e.Name == "⌦") == (e.Modifiers == key.ModShift))
-		case "⎋":
-			if f.named.Focused() {
-				f.named.SetText(f.typ.Name)
-				f.Focus()
-			}
 		}
 	}
 
-	for _, e := range f.focusNamed.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range f.focusNamed.Events(gtx, "←|→|⏎|⌤|⌫|⌦|⎋") {
 		switch e.Name {
 		case "→":
 			f.Focus()
 		case "←":
-			switch p := f.parent.parent.(type) {
-			case *EnumElemTypeEditor:
-				p.Focus()
-			case *TypeEditor:
-				p.parent.(*TypeNameEditor).focusTyped.Focus()
-			}
-		case "↑":
-			f.parent.focusNext(f, false)
-		case "↓":
-			f.parent.focusNext(f, true)
+			f.parent.parent.Focus()
 		case "⏎", "⌤", "⌫", "⌦":
 			f.named.SetCaret(f.named.Len(), f.named.Len())
 			f.named.Focus()
+		case "⎋":
+			f.named.SetText(f.typ.Name)
+			f.Focus()
 		}
 	}
 
-	for _, e := range f.focusTyped.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, e := range f.focusTyped.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
-			if ed, ok := f.typed.ed.(interface{ Focus() }); ok {
+			if ed, ok := f.typed.ed.(Focuser); ok {
 				ed.Focus()
 			}
 		case "←":
 			f.Focus()
-		case "↑":
-			f.parent.focusNext(f, false)
-		case "↓":
-			f.parent.focusNext(f, true)
 		case "⏎", "⌤", "⌫", "⌦":
-			f.typed.showMenu = true
+			f.typed.Edit()
 		}
 	}
 
@@ -242,8 +211,7 @@ func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
 			if validName(e.Text) {
 				f.typ.Name = e.Text
 				if f.typ.Type == nil {
-					f.focusTyped.Focus()
-					f.typed.showMenu = true
+					f.typed.Edit()
 				} else {
 					f.Focus()
 				}
@@ -268,8 +236,4 @@ func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
 			}),
 		)
 	})
-}
-
-func validName(name string) bool {
-	return name != ""
 }

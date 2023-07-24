@@ -8,22 +8,20 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
 	"golang.org/x/exp/slices"
 )
 
 type EnumTypeEditor struct {
-	parent *TypeEditor
+	parent Focuser
 	typ    *types.EnumType
 	loader *types.Loader
 	elems  []*EnumElemTypeEditor
 }
 
-func NewEnumTypeEditor(parent *TypeEditor, typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
+func NewEnumTypeEditor(parent Focuser, typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
 	s := &EnumTypeEditor{
 		parent: parent,
 		typ:    typ,
@@ -52,7 +50,7 @@ func (e *EnumTypeEditor) focusNext(el *EnumElemTypeEditor, next bool) {
 		i += 2
 	}
 	if i < 0 {
-		e.parent.parent.(*TypeNameEditor).focusTyped.Focus()
+		e.parent.Focus()
 	} else if i < len(e.elems) {
 		e.elems[i].Focus()
 	}
@@ -79,7 +77,7 @@ func (e *EnumTypeEditor) deleteElem(el *EnumElemTypeEditor, back bool) {
 	if i < len(e.elems) {
 		e.elems[i].Focus()
 	} else {
-		e.parent.parent.(*TypeNameEditor).focusTyped.Focus()
+		e.parent.Focus()
 	}
 }
 
@@ -130,7 +128,7 @@ func (e *EnumTypeEditor) Layout(gtx C) D {
 type EnumElemTypeEditor struct {
 	parent *EnumTypeEditor
 	typ    *types.EnumElemType
-	named  widget.Editor
+	named  editor
 	typed  *StructTypeEditor
 
 	nameRec Recording
@@ -143,11 +141,7 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, load
 	f := &EnumElemTypeEditor{
 		parent: parent,
 		typ:    typ,
-		named: widget.Editor{
-			Alignment:  text.End,
-			SingleLine: true,
-			Submit:     true,
-		},
+		named:  newEditor(),
 	}
 	f.typed = NewStructTypeEditor(f, &typ.Type, loader)
 	f.named.SetText(typ.Name)
@@ -155,12 +149,12 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, load
 }
 
 func (e *EnumElemTypeEditor) LayoutName(gtx C) int {
-	e.nameRec = Record(gtx, material.Editor(theme, &e.named, "").Layout)
+	e.nameRec = Record(gtx, e.named.Layout)
 	return e.nameRec.Dims.Size.X
 }
 
 func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
-	for _, ev := range e.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]|⎋") {
+	for _, ev := range e.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]") {
 		switch ev.Name {
 		case "←":
 			e.focusNamed.Focus()
@@ -174,25 +168,21 @@ func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
 			e.parent.insertElem(e, ev.Modifiers == key.ModShift)
 		case "⌫", "⌦":
 			e.parent.deleteElem(e, (ev.Name == "⌦") == (ev.Modifiers == key.ModShift))
-		case "⎋":
-			if e.named.Focused() {
-				e.named.SetText(e.typ.Name)
-				e.Focus()
-			}
 		}
 	}
 
-	for _, ev := range e.focusNamed.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
+	for _, ev := range e.focusNamed.Events(gtx, "←|→|⏎|⌤|⌫|⌦|⎋") {
 		switch ev.Name {
 		case "→":
 			e.Focus()
-		case "←", "↑":
+		case "←":
 			e.parent.focusNext(e, false)
-		case "↓":
-			e.parent.focusNext(e, true)
 		case "⏎", "⌤", "⌫", "⌦":
 			e.named.SetCaret(e.named.Len(), e.named.Len())
 			e.named.Focus()
+		case "⎋":
+			e.named.SetText(e.typ.Name)
+			e.Focus()
 		}
 	}
 

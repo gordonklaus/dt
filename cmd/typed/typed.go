@@ -16,7 +16,7 @@ import (
 )
 
 type TypeEditor struct {
-	parent any
+	parent Focuser
 	typ    *types.Type
 	loader *types.Loader
 
@@ -39,52 +39,35 @@ type typeEditor interface {
 	Layout(gtx C) D
 }
 
-func NewTypeNameTypeEditor(parent any, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := &TypeEditor{
-		parent: parent,
-		typ:    typ,
-		loader: loader,
-		menu:   layout.List{Axis: layout.Vertical},
-		items: []*typeMenuItem{
-			{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }},
-			{txt: "enum", new: func() types.Type { return &types.EnumType{Elems: []*types.EnumElemType{{}}} }},
-		},
+func NewTypeNameTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(parent, typ, loader)
+	t.items = []*typeMenuItem{
+		{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }},
+		{txt: "enum", new: func() types.Type { return &types.EnumType{Elems: []*types.EnumElemType{{}}} }},
 	}
-	t.ed = t.newEditor(*typ)
 	return t
 }
 
-func NewMapKeyTypeEditor(parent any, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := &TypeEditor{
-		parent: parent,
-		typ:    typ,
-		loader: loader,
-		menu:   layout.List{Axis: layout.Vertical},
-		items: []*typeMenuItem{
-			{txt: "int", new: func() types.Type { return &types.IntType{} }},
-			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
-			{txt: "string", new: func() types.Type { return &types.StringType{} }},
-		},
+func NewMapKeyTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(parent, typ, loader)
+	t.items = []*typeMenuItem{
+		{txt: "int", new: func() types.Type { return &types.IntType{} }},
+		{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
+		{txt: "string", new: func() types.Type { return &types.StringType{} }},
 	}
-	t.ed = t.newEditor(*typ)
 	return t
 }
 
-func NewTypeEditor(parent any, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := &TypeEditor{
-		parent: parent,
-		typ:    typ,
-		loader: loader,
-		menu:   layout.List{Axis: layout.Vertical},
-		items: []*typeMenuItem{
-			{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
-			{txt: "int", new: func() types.Type { return &types.IntType{} }},
-			{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
-			{txt: "string", new: func() types.Type { return &types.StringType{} }},
-			{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
-			{txt: "map", new: func() types.Type { return &types.MapType{} }},
-			{txt: "option", new: func() types.Type { return &types.OptionType{} }},
-		},
+func NewTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(parent, typ, loader)
+	t.items = []*typeMenuItem{
+		{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
+		{txt: "int", new: func() types.Type { return &types.IntType{} }},
+		{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
+		{txt: "string", new: func() types.Type { return &types.StringType{} }},
+		{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
+		{txt: "map", new: func() types.Type { return &types.MapType{} }},
+		{txt: "option", new: func() types.Type { return &types.OptionType{} }},
 	}
 	pkg, _ := loader.Load(&types.PackageID_Current{})
 	for _, n := range pkg.Types {
@@ -93,16 +76,18 @@ func NewTypeEditor(parent any, typ *types.Type, loader *types.Loader) *TypeEdito
 			return &types.NamedType{Package: &types.PackageID_Current{}, Name: n.Name, Type: n.Type}
 		}})
 	}
-	t.ed = t.newEditor(*typ)
 	return t
 }
 
-func mapSlice[T, U any](t []T, f func(T) U) []U {
-	u := make([]U, len(t))
-	for i, t := range t {
-		u[i] = f(t)
+func newTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := &TypeEditor{
+		parent: parent,
+		typ:    typ,
+		loader: loader,
+		menu:   layout.List{Axis: layout.Vertical},
 	}
-	return u
+	t.ed = t.newEditor(*typ)
+	return t
 }
 
 func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
@@ -118,9 +103,9 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	case *types.StringType:
 		return NewStringTypeEditor(typ)
 	case *types.StructType:
-		return NewStructTypeEditor(t, typ, t.loader)
+		return NewStructTypeEditor(t.parent, typ, t.loader)
 	case *types.EnumType:
-		return NewEnumTypeEditor(t, typ, t.loader)
+		return NewEnumTypeEditor(t.parent, typ, t.loader)
 	case *types.ArrayType:
 		return NewArrayTypeEditor(t, typ, t.loader)
 	case *types.MapType:
@@ -132,6 +117,8 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	}
 	panic("unreached")
 }
+
+func (t *TypeEditor) Edit() { t.showMenu = true }
 
 func (t *TypeEditor) Layout(gtx C) D {
 	if ed := t.itemClicked(); ed != nil {
@@ -203,18 +190,14 @@ func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
 						t.showMenu = false
 						t.ed = t.newEditor(it.new())
 						*t.typ = t.ed.Type()
-						if ed, ok := t.ed.(interface{ Focus() }); ok {
+						if ed, ok := t.ed.(Focuser); ok {
 							ed.Focus()
 						} else {
-							t.parent.(interface{ Focus() }).Focus()
+							t.parent.Focus()
 						}
 					case "⎋":
 						t.showMenu = false
-						if p, ok := t.parent.(*MapTypeEditor); ok && t.typ == &p.typ.Value {
-							p.focusValue.Focus()
-						} else {
-							t.parent.(interface{ Focus() }).Focus()
-						}
+						t.parent.Focus()
 					}
 				}
 			}
