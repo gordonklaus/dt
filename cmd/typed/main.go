@@ -29,14 +29,10 @@ type D = layout.Dimensions
 var theme = material.NewTheme(gofont.Collection())
 
 func Main() {
-	typeName := flag.String("type", "", "")
 	flag.Parse()
 	dir := "."
 	if flag.NArg() > 0 {
 		dir = flag.Arg(0)
-	}
-	if *typeName == "" {
-		log.Fatal("type argument is required (for now)")
 	}
 	dir, err := filepath.Abs(dir)
 	if err != nil {
@@ -52,18 +48,10 @@ func Main() {
 		log.Fatal(err)
 	}
 
-	typ := pkg.Type(*typeName)
-	if typ == nil {
-		typ = &types.TypeName{
-			Name: *typeName,
-		}
-		pkg.Types = append(pkg.Types, typ)
-	}
-
 	w := app.NewWindow(app.Title("typEd"))
 	w.Perform(system.ActionMaximize)
 
-	ed := NewPackageEditor(pkg, typ, loader)
+	ed := NewPackageEditor(pkg, loader)
 
 	var ops op.Ops
 	for e := range w.Events() {
@@ -72,7 +60,7 @@ func Main() {
 			ops.Reset()
 			gtx := layout.NewContext(&ops, e)
 
-			key.InputOp{Tag: w, Keys: "Tab"}.Add(gtx.Ops) // Disable tab navigation globally.
+			key.InputOp{Tag: w, Keys: "(Shift)-Tab"}.Add(gtx.Ops) // Disable tab navigation globally.
 
 			layout.Center.Layout(gtx, ed.Layout)
 			e.Frame(&ops)

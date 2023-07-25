@@ -64,7 +64,9 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		}
 	}
 
-	if n.typ.Type == nil {
+	if n.typ.Name == "" {
+		n.named.Focus()
+	} else if n.typ.Type == nil {
 		n.typed.Edit()
 	}
 

@@ -1,40 +1,105 @@
 package main
 
 import (
+	"image"
+	"image/color"
+
 	"gioui.org/io/key"
+	"gioui.org/layout"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
+	"gioui.org/unit"
+	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
+	"golang.org/x/exp/slices"
 )
 
 type PackageEditor struct {
 	pkg    *types.Package
 	loader *types.Loader
-	ed     *TypeNameEditor
+
+	KeyFocus
+	list        layout.List
+	focusedType int
+	ed          *TypeNameEditor
 }
 
-func NewPackageEditor(pkg *types.Package, typ *types.TypeName, loader *types.Loader) *PackageEditor {
+func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
 	ed := &PackageEditor{
 		pkg:    pkg,
 		loader: loader,
-		ed:     NewTypeNameEditor(typ, loader),
+		list: layout.List{
+			Axis: layout.Vertical,
+		},
 	}
-	ed.ed.focusTyped.Focus()
+	if len(pkg.Types) > 0 {
+		ed.ed = NewTypeNameEditor(pkg.Types[0], loader)
+		ed.ed.Focus()
+	}
 	return ed
 }
 
 func (ed *PackageEditor) Layout(gtx C) D {
-	for _, e := range gtx.Events(ed) {
-		switch e := e.(type) {
-		case key.Event:
-			if e.State == key.Press {
-				ed.loader.Store(&types.PackageID_Current{})
+	for _, e := range ed.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤]|Short-S") {
+		switch e.Name {
+		case "←":
+			ed.Focus()
+		case "→":
+			ed.ed.Focus()
+		case "↑":
+			if ed.focusedType > 0 {
+				ed.focusedType--
+				ed.ed = NewTypeNameEditor(ed.pkg.Types[ed.focusedType], ed.loader)
 			}
+		case "↓":
+			if ed.focusedType < len(ed.pkg.Types)-1 {
+				ed.focusedType++
+				ed.ed = NewTypeNameEditor(ed.pkg.Types[ed.focusedType], ed.loader)
+			}
+		case "⏎", "⌤":
+			n := &types.TypeName{}
+			if e.Modifiers != key.ModShift {
+				ed.focusedType++
+			}
+			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
+			ed.ed = NewTypeNameEditor(n, ed.loader)
+			ed.ed.Focus()
+		case "S":
+			ed.loader.Store(&types.PackageID_Current{})
 		}
 	}
 
-	key.InputOp{
-		Tag:  ed,
-		Keys: "Short-S",
-	}.Add(gtx.Ops)
+	listRec := Record(gtx, func(gtx C) D {
+		return ed.list.Layout(gtx, len(ed.pkg.Types), ed.layoutTypeName)
+	})
+	edRec := Record(gtx, ed.ed.Layout)
 
-	return ed.ed.Layout(gtx)
+	w2 := gtx.Constraints.Max.X / 2
+	l2 := listRec.Dims.Size.X / 2
+	e2 := edRec.Dims.Size.X / 2
+	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(layout.Spacer{Width: unit.Dp(w2 - 256 - l2)}.Layout),
+		layout.Rigid(listRec.Layout),
+		layout.Rigid(layout.Spacer{Width: unit.Dp(256 - l2 - e2)}.Layout),
+		layout.Rigid(edRec.Layout),
+		layout.Rigid(layout.Spacer{Width: unit.Dp(w2 - e2)}.Layout),
+	)
+}
+
+func (ed *PackageEditor) layoutTypeName(gtx C, i int) D {
+	return layout.Stack{}.Layout(gtx,
+		layout.Expanded(func(gtx C) D {
+			if i != ed.focusedType || !ed.Focused() {
+				return D{}
+			}
+			paint.FillShape(gtx.Ops, color.NRGBA{A: 64},
+				clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4)).Op(gtx.Ops))
+			return D{Size: gtx.Constraints.Min}
+		}),
+		layout.Stacked(func(gtx C) D {
+			return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
+				return material.Body1(theme, ed.pkg.Types[i].Name).Layout(gtx)
+			})
+		}),
+	)
 }
