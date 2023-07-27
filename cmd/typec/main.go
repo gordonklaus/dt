@@ -142,17 +142,19 @@ func (w *writer) writeStruct(t *types.StructType, name string) {
 	w.writeln("}")
 
 	w.writeln("func (x *%s) Write(b *bits.Buffer) {", name)
+	w.writeln("b.WriteSize(func() {")
 	for i, f := range t.Fields {
 		w.writeTypeWriter(f.Type, "x."+fname[i])
 	}
-	w.writeln("}\n")
+	w.writeln("})}\n")
 
 	w.varID = 0
 	w.writeln("func (x *%s) Read(b *bits.Buffer) error {", name)
+	w.writeln("return b.ReadSize(func() error {")
 	for i, f := range t.Fields {
 		w.writeTypeReader(f.Type, "&x."+fname[i])
 	}
-	w.writeln("return nil}\n")
+	w.writeln("return nil})}\n")
 }
 
 func (w *writer) writeType(t types.Type) {
