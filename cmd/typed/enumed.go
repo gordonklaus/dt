@@ -67,6 +67,18 @@ func (e *EnumTypeEditor) insertElem(el *EnumElemTypeEditor, before bool) {
 	e.elems[i].named.Focus()
 }
 
+func (e *EnumTypeEditor) swap(el *EnumElemTypeEditor, next bool) {
+	i := slices.Index(e.elems, el)
+	if next && i == len(e.elems)-1 || !next && i == 0 {
+		return
+	}
+	if !next {
+		i--
+	}
+	e.typ.Elems[i], e.typ.Elems[i+1] = e.typ.Elems[i+1], e.typ.Elems[i]
+	e.elems[i], e.elems[i+1] = e.elems[i+1], e.elems[i]
+}
+
 func (e *EnumTypeEditor) deleteElem(el *EnumElemTypeEditor, back bool) {
 	i := slices.Index(e.elems, el)
 	e.typ.Elems = slices.Delete(e.typ.Elems, i, i+1)
@@ -154,16 +166,24 @@ func (e *EnumElemTypeEditor) LayoutName(gtx C) int {
 }
 
 func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
-	for _, ev := range e.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]") {
+	for _, ev := range e.KeyFocus.Events(gtx, "←|→|(Shift)-[↑,↓]|(Shift)-[⏎,⌤,⌫,⌦]") {
 		switch ev.Name {
 		case "←":
 			e.focusNamed.Focus()
 		case "→":
 			e.typed.Focus()
 		case "↑":
-			e.parent.focusNext(e, false)
+			if ev.Modifiers == key.ModShift {
+				e.parent.swap(e, false)
+			} else {
+				e.parent.focusNext(e, false)
+			}
 		case "↓":
-			e.parent.focusNext(e, true)
+			if ev.Modifiers == key.ModShift {
+				e.parent.swap(e, true)
+			} else {
+				e.parent.focusNext(e, true)
+			}
 		case "⏎", "⌤":
 			e.parent.insertElem(e, ev.Modifiers == key.ModShift)
 		case "⌫", "⌦":

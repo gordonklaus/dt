@@ -72,6 +72,18 @@ func (s *StructTypeEditor) insertField(f *StructFieldTypeEditor, before bool) {
 	s.fields[i].named.Focus()
 }
 
+func (s *StructTypeEditor) swap(f *StructFieldTypeEditor, next bool) {
+	i := slices.Index(s.fields, f)
+	if next && i == len(s.fields)-1 || !next && i == 0 {
+		return
+	}
+	if !next {
+		i--
+	}
+	s.typ.Fields[i], s.typ.Fields[i+1] = s.typ.Fields[i+1], s.typ.Fields[i]
+	s.fields[i], s.fields[i+1] = s.fields[i+1], s.fields[i]
+}
+
 func (s *StructTypeEditor) deleteField(f *StructFieldTypeEditor, back bool) {
 	i := slices.Index(s.fields, f)
 	s.typ.Fields = slices.Delete(s.typ.Fields, i, i+1)
@@ -160,16 +172,24 @@ func (f *StructFieldTypeEditor) LayoutName(gtx C) int {
 }
 
 func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
-	for _, e := range f.KeyFocus.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤,⌫,⌦]") {
+	for _, e := range f.KeyFocus.Events(gtx, "←|→|(Shift)-[↑,↓]|(Shift)-[⏎,⌤,⌫,⌦]") {
 		switch e.Name {
 		case "←":
 			f.focusNamed.Focus()
 		case "→":
 			f.focusTyped.Focus()
 		case "↑":
-			f.parent.focusNext(f, false)
+			if e.Modifiers == key.ModShift {
+				f.parent.swap(f, false)
+			} else {
+				f.parent.focusNext(f, false)
+			}
 		case "↓":
-			f.parent.focusNext(f, true)
+			if e.Modifiers == key.ModShift {
+				f.parent.swap(f, true)
+			} else {
+				f.parent.focusNext(f, true)
+			}
 		case "⏎", "⌤":
 			f.parent.insertField(f, e.Modifiers == key.ModShift)
 		case "⌫", "⌦":
