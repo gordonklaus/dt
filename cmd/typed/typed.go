@@ -52,7 +52,9 @@ func NewMapKeyTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) 
 	t := newTypeEditor(parent, typ, loader)
 	t.items = []*typeMenuItem{
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
-		{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
+		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
+		{txt: "float32", new: func() types.Type { return &types.FloatType{Size: 32} }},
+		{txt: "float64", new: func() types.Type { return &types.FloatType{Size: 64} }},
 		{txt: "string", new: func() types.Type { return &types.StringType{} }},
 	}
 	return t
@@ -63,7 +65,9 @@ func NewTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeE
 	t.items = []*typeMenuItem{
 		{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
-		{txt: "float", new: func() types.Type { return &types.FloatType{Size: 64} }},
+		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
+		{txt: "float32", new: func() types.Type { return &types.FloatType{Size: 32} }},
+		{txt: "float64", new: func() types.Type { return &types.FloatType{Size: 64} }},
 		{txt: "string", new: func() types.Type { return &types.StringType{} }},
 		{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
 		{txt: "map", new: func() types.Type { return &types.MapType{} }},
