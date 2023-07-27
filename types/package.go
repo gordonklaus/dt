@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/gordonklaus/data/bits"
+	"github.com/gordonklaus/data/types/internal/types"
 )
 
 type Package struct {
@@ -18,51 +18,56 @@ func (p *Package) Type(name string) *TypeName {
 	return nil
 }
 
-func (p *Package) Write(b *bits.Buffer) {
-	b.WriteSize(func() {
-		b.WriteString(p.Name)
-		b.WriteString(p.Doc)
-		b.WriteVarUint(uint64(len(p.Types)))
-		for _, t := range p.Types {
-			t.Write(b)
-		}
-	})
-}
-
-func (p *Package) Read(b *bits.Buffer) error {
-	return b.ReadSize(func() error {
-		if err := b.ReadString(&p.Name); err != nil {
-			return err
-		}
-		if err := b.ReadString(&p.Doc); err != nil {
-			return err
-		}
-		var len uint64
-		if err := b.ReadVarUint(&len); err != nil {
-			return err
-		}
-		p.Types = make([]*TypeName, len)
-		for i := range p.Types {
-			p.Types[i] = &TypeName{}
-			if err := p.Types[i].Read(b); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-type PackageID interface {
-	Write(*bits.Buffer)
-	Read(*bits.Buffer) error
-}
+type PackageID interface{ isPackageID() }
 
 type PackageID_Current struct{}
 
-func (*PackageID_Current) Write(b *bits.Buffer) {
-	b.WriteSize(func() {})
+func (*PackageID_Current) isPackageID() {}
+
+func packageFromData(p types.Package) *Package {
+	pkg := &Package{
+		Name:  p.Name,
+		Doc:   p.Doc,
+		Types: make([]*TypeName, len(p.Types)),
+	}
+	for i, t := range p.Types {
+		pkg.Types[i] = &TypeName{
+			Name: t.Name,
+			Doc:  t.Doc,
+			Type: typeFromData(t.Type),
+		}
+	}
+	return pkg
 }
 
-func (*PackageID_Current) Read(b *bits.Buffer) error {
-	return b.ReadSize(func() error { return nil })
+func packageToData(p *Package) types.Package {
+	pkg := types.Package{
+		Name:  p.Name,
+		Doc:   p.Doc,
+		Types: make([]types.TypeName, len(p.Types)),
+	}
+	for i, t := range p.Types {
+		pkg.Types[i] = types.TypeName{
+			Name: t.Name,
+			Doc:  t.Doc,
+			Type: typeToData(t.Type),
+		}
+	}
+	return pkg
+}
+
+func packageIDFromData(p types.PackageId) PackageID {
+	switch p.PackageId.(type) {
+	case *types.PackageId_Current:
+		return &PackageID_Current{}
+	}
+	panic("unreached")
+}
+
+func packageIDToData(p PackageID) types.PackageId {
+	switch p.(type) {
+	case *PackageID_Current:
+		return types.PackageId{PackageId: &types.PackageId_Current{}}
+	}
+	panic("unreached")
 }

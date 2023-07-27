@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gordonklaus/data/bits"
+	"github.com/gordonklaus/data/types/internal/types"
 )
 
 func TestType(t *testing.T) {
@@ -43,15 +44,17 @@ func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
 func newStringType() *StringType { return &StringType{} }
 
 func testType(t *testing.T, src Type) {
+	srctyp := typeToData(src)
 	b := bits.NewBuffer()
-	WriteType(b, src)
-	var dst Type
-	if err := ReadType(b, &dst); err != nil {
+	srctyp.Write(b)
+	var dsttyp types.Type
+	if err := dsttyp.Read(b); err != nil {
 		t.Fatal(err)
 	}
 	if b.Remaining() > 0 {
 		t.Errorf("%d bytes remaining", b.Remaining())
 	}
+	dst := typeFromData(dsttyp)
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("Types are not equal:\nsrc = %#v\ndst = %#v", src, dst)
 	}

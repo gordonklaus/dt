@@ -1,127 +1,84 @@
 package types
 
 import (
-	"fmt"
-
-	"github.com/gordonklaus/data/bits"
+	"github.com/gordonklaus/data/types/internal/types"
 )
 
 type Type interface {
-	bits.ReadWriter
+	isType()
 }
 
-type Kind uint64
+func (*BoolType) isType()   {}
+func (*IntType) isType()    {}
+func (*FloatType) isType()  {}
+func (*StringType) isType() {}
+func (*NamedType) isType()  {}
+func (*OptionType) isType() {}
+func (*ArrayType) isType()  {}
+func (*MapType) isType()    {}
+func (*EnumType) isType()   {}
+func (*StructType) isType() {}
 
-const (
-	Bool Kind = iota
-	Int
-	Float
-
-	Enum
-	Struct
-	Array
-	Map
-
-	Option
-	String
-	Named
-)
-
-func (k Kind) String() string {
-	switch k {
-	case Bool:
-		return "bool"
-	case Int:
-		return "int"
-	case Float:
-		return "float"
-
-	case Enum:
-		return "enum"
-	case Struct:
-		return "struct"
-	case Array:
-		return "array"
-	case Map:
-		return "map"
-
-	case Option:
-		return "option"
-	case String:
-		return "string"
-	case Named:
-		return "named"
-	}
-	return fmt.Sprintf("Kind(%d)", k)
-}
-
-func WriteType(b *bits.Buffer, t Type) {
-	b.WriteVarUint_4bit(uint64(kind(t)))
-	t.Write(b)
-}
-
-func kind(t Type) Kind {
-	switch t.(type) {
-	case *BoolType:
-		return Bool
-	case *IntType:
-		return Int
-	case *FloatType:
-		return Float
-
-	case *EnumType:
-		return Enum
-	case *StructType:
-		return Struct
-	case *ArrayType:
-		return Array
-	case *MapType:
-		return Map
-
-	case *OptionType:
-		return Option
-	case *StringType:
-		return String
-	case *NamedType:
-		return Named
-	}
-	panic(fmt.Sprintf("no Kind for Type %T", t))
-}
-
-func ReadType(b *bits.Buffer, t *Type) error {
-	var k uint64
-	if err := b.ReadVarUint_4bit(&k); err != nil {
-		return err
-	}
-
-	*t = NewType(Kind(k))
-	return (*t).Read(b)
-}
-
-func NewType(k Kind) Type {
-	switch k {
-	case Bool:
+func typeFromData(t types.Type) Type {
+	switch t := t.Type.(type) {
+	case *types.Type_Bool:
 		return &BoolType{}
-	case Int:
-		return &IntType{}
-	case Float:
-		return &FloatType{}
-
-	case Enum:
-		return &EnumType{}
-	case Struct:
-		return &StructType{}
-	case Array:
-		return &ArrayType{}
-	case Map:
-		return &MapType{}
-
-	case Option:
-		return &OptionType{}
-	case String:
+	case *types.Type_Int:
+		return &IntType{Unsigned: t.Unsigned}
+	case *types.Type_Float:
+		return &FloatType{Size: t.Size}
+	case *types.Type_String:
 		return &StringType{}
-	case Named:
-		return &NamedType{}
+	case *types.Type_Named:
+		return &NamedType{
+			Package: packageIDFromData(t.Package),
+			Name:    t.Name,
+		}
+	case *types.Type_Option:
+		return &OptionType{Elem: typeFromData(t.Element)}
+	case *types.Type_Array:
+		return &ArrayType{Elem: typeFromData(t.Element)}
+	case *types.Type_Map:
+		return &MapType{
+			Key:   typeFromData(t.Key),
+			Value: typeFromData(t.Value),
+		}
+	case *types.Type_Enum:
+		return enumTypeFromData(t)
+	case *types.Type_Struct:
+		return structTypeFromData(t)
 	}
-	panic(fmt.Sprintf("unknown Kind %d", k))
+	panic("unreached")
+}
+
+func typeToData(t Type) types.Type {
+	switch t := t.(type) {
+	case *BoolType:
+		return types.Type{Type: &types.Type_Bool{}}
+	case *IntType:
+		return types.Type{Type: &types.Type_Int{Unsigned: t.Unsigned}}
+	case *FloatType:
+		return types.Type{Type: &types.Type_Float{Size: t.Size}}
+	case *StringType:
+		return types.Type{Type: &types.Type_String{}}
+	case *NamedType:
+		return types.Type{Type: &types.Type_Named{
+			Package: packageIDToData(t.Package),
+			Name:    t.Name,
+		}}
+	case *OptionType:
+		return types.Type{Type: &types.Type_Option{Element: typeToData(t.Elem)}}
+	case *ArrayType:
+		return types.Type{Type: &types.Type_Array{Element: typeToData(t.Elem)}}
+	case *MapType:
+		return types.Type{Type: &types.Type_Map{
+			Key:   typeToData(t.Key),
+			Value: typeToData(t.Value),
+		}}
+	case *EnumType:
+		return types.Type{Type: enumTypeToData(t)}
+	case *StructType:
+		return types.Type{Type: structTypeToData(t)}
+	}
+	panic("unreached")
 }

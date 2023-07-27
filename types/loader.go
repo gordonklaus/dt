@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gordonklaus/data/bits"
+	"github.com/gordonklaus/data/types/internal/types"
 )
 
 type Loader struct {
@@ -28,16 +29,22 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		return nil, err
 	}
 
-	var p Package
+	var pkg types.Package
 	b := bits.NewReadBuffer(buf)
-	if err := p.Read(b); err != nil {
+	if err := pkg.Read(b); err != nil {
 		return nil, err
 	}
 	if b.Remaining() > 7 {
 		return nil, fmt.Errorf("%d bits remaining after reading package", b.Remaining())
 	}
 
-	l.Packages[id] = &p
+	p := packageFromData(pkg)
+
+	if err := ValidatePackage(p); err != nil {
+		return nil, err
+	}
+
+	l.Packages[id] = p
 
 	for _, t := range p.Types {
 		if err := l.setNamedTypes(t.Type); err != nil {
@@ -45,7 +52,7 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		}
 	}
 
-	return &p, nil
+	return p, nil
 }
 
 func (l *Loader) setNamedTypes(t Type) error {
@@ -86,7 +93,13 @@ func (l *Loader) Store(id PackageID) error {
 		return fmt.Errorf("package %#v not yet loaded", id)
 	}
 
+	if err := ValidatePackage(p); err != nil {
+		return err
+	}
+
+	pkg := packageToData(p)
+
 	b := bits.NewBuffer()
-	p.Write(b)
+	pkg.Write(b)
 	return l.storage.Store(id, b.Bytes())
 }
