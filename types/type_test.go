@@ -10,36 +10,30 @@ import (
 func TestType(t *testing.T) {
 	testType(t,
 		newIntType(),
-		&IntType{},
 	)
 	testType(t,
 		&ArrayType{Elem: newStringType()},
-		&ArrayType{},
 	)
 	testType(t,
 		&MapType{Key: newStringType(), Value: newFloat64Type()},
-		&MapType{},
 	)
 	testType(t,
 		&EnumType{Elems: []*EnumElemType{
-			{Name: "x", Type: StructType{Fields: []*StructFieldType{{Type: newFloat64Type()}}}},
-			{Name: "y", Type: StructType{Fields: []*StructFieldType{{Type: newBoolType()}}}},
+			{Name: "x", Type: &StructType{Fields: []*StructFieldType{{Type: newFloat64Type()}}}},
+			{Name: "y", Type: &StructType{Fields: []*StructFieldType{{Type: newBoolType()}}}},
 		}},
-		&EnumType{},
 	)
 	testType(t,
 		&StructType{Fields: []*StructFieldType{
 			{Name: "x", Type: newIntType()},
 			{Name: "y", Type: newIntType()},
 		}},
-		&StructType{},
 	)
 	testType(t,
 		&NamedType{
 			Package: &PackageID_Current{},
 			Name:    "Bob",
 		},
-		&NamedType{},
 	)
 }
 
@@ -48,9 +42,10 @@ func newIntType() *IntType       { return &IntType{} }
 func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
 func newStringType() *StringType { return &StringType{} }
 
-func testType(t *testing.T, src, dst Type) {
+func testType(t *testing.T, src Type) {
 	b := bits.NewBuffer()
 	WriteType(b, src)
+	var dst Type
 	if err := ReadType(b, &dst); err != nil {
 		t.Fatal(err)
 	}

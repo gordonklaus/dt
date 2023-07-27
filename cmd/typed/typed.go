@@ -42,8 +42,8 @@ type typeEditor interface {
 func NewTypeNameTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
 	t := newTypeEditor(parent, typ, loader)
 	t.items = []*typeMenuItem{
-		{txt: "struct", new: func() types.Type { return &types.StructType{Fields: []*types.StructFieldType{{}}} }},
-		{txt: "enum", new: func() types.Type { return &types.EnumType{Elems: []*types.EnumElemType{{}}} }},
+		{txt: "struct", new: func() types.Type { return &types.StructType{} }},
+		{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
 	}
 	return t
 }

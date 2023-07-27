@@ -8,14 +8,14 @@ import (
 type EnumValue struct {
 	Type  *types.EnumType
 	Elem  uint64
-	Value *StructValue
+	Value Value
 }
 
 func NewEnumValue(t *types.EnumType) *EnumValue {
 	return &EnumValue{
 		Type:  t,
 		Elem:  0,
-		Value: NewStructValue(&t.Elems[0].Type),
+		Value: NewValue(t.Elems[0].Type),
 	}
 }
 
@@ -29,9 +29,9 @@ func (e *EnumValue) Read(b *bits.Buffer) error {
 		return err
 	}
 	if e.Elem < uint64(len(e.Type.Elems)) {
-		e.Value = NewStructValue(&e.Type.Elems[e.Elem].Type)
+		e.Value = NewValue(e.Type.Elems[e.Elem].Type)
 	} else {
-		e.Value = NewStructValue(&UnknownEnumElementType)
+		e.Value = NewValue(&UnknownEnumElementType)
 	}
 	return e.Value.Read(b)
 }

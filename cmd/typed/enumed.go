@@ -61,7 +61,7 @@ func (e *EnumTypeEditor) insertElem(el *EnumElemTypeEditor, before bool) {
 	if !before {
 		i++
 	}
-	elem := &types.EnumElemType{}
+	elem := &types.EnumElemType{Type: &types.StructType{}}
 	e.typ.Elems = slices.Insert(e.typ.Elems, i, elem)
 	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.loader))
 	e.elems[i].named.Focus()
@@ -143,7 +143,7 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, load
 		typ:    typ,
 		named:  newEditor(),
 	}
-	f.typed = NewStructTypeEditor(f, &typ.Type, loader)
+	f.typed = NewStructTypeEditor(f, typ.Type.(*types.StructType), loader)
 	f.named.SetText(typ.Name)
 	return f
 }

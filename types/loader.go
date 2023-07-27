@@ -52,7 +52,7 @@ func (l *Loader) setNamedTypes(t Type) error {
 	switch t := t.(type) {
 	case *EnumType:
 		for _, e := range t.Elems {
-			if err := l.setNamedTypes(&e.Type); err != nil {
+			if err := l.setNamedTypes(e.Type); err != nil {
 				return err
 			}
 		}

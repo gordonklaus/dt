@@ -32,10 +32,11 @@ func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
 			Axis: layout.Vertical,
 		},
 	}
-	if len(pkg.Types) > 0 {
-		ed.ed = NewTypeNameEditor(pkg.Types[0], loader)
-		ed.ed.Focus()
+	if len(pkg.Types) == 0 {
+		pkg.Types = []*types.TypeName{{}}
 	}
+	ed.ed = NewTypeNameEditor(pkg.Types[0], loader)
+	ed.ed.Focus()
 	return ed
 }
 
@@ -58,7 +59,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 			}
 		case "⏎", "⌤":
 			n := &types.TypeName{}
-			if e.Modifiers != key.ModShift {
+			if e.Modifiers != key.ModShift && len(ed.pkg.Types) > 0 {
 				ed.focusedType++
 			}
 			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
@@ -72,7 +73,10 @@ func (ed *PackageEditor) Layout(gtx C) D {
 	listRec := Record(gtx, func(gtx C) D {
 		return ed.list.Layout(gtx, len(ed.pkg.Types), ed.layoutTypeName)
 	})
-	edRec := Record(gtx, ed.ed.Layout)
+	var edRec Recording
+	if ed.ed != nil {
+		edRec = Record(gtx, ed.ed.Layout)
+	}
 
 	w2 := gtx.Constraints.Max.X / 2
 	l2 := listRec.Dims.Size.X / 2

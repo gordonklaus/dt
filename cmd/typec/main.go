@@ -125,7 +125,7 @@ func (w *writer) writeEnum(t *types.EnumType, name string) {
 	w.writeln("}\n")
 
 	for i, e := range t.Elems {
-		w.writeStruct(&e.Type, ename[i])
+		w.writeStruct(e.Type.(*types.StructType), ename[i])
 	}
 }
 
