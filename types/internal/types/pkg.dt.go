@@ -15,11 +15,10 @@ var (
 	_ = slices.Sort[int]
 )
 
-type Type struct {
-	Type interface {
-		isType()
-		bits.ReadWriter
-	}
+type Type struct{ Type Type__Enum }
+type Type__Enum interface {
+	isType()
+	bits.ReadWriter
 }
 
 func (*Type_Bool) isType()   {}
@@ -433,11 +432,10 @@ func (x *TypeName) Read(b *bits.Buffer) error {
 	})
 }
 
-type PackageId struct {
-	PackageId interface {
-		isPackageId()
-		bits.ReadWriter
-	}
+type PackageId struct{ PackageId PackageId__Enum }
+type PackageId__Enum interface {
+	isPackageId()
+	bits.ReadWriter
 }
 
 func (*PackageId_Current) isPackageId() {}

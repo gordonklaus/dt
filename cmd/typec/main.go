@@ -92,7 +92,8 @@ func (w *writer) writePackage(p *types.Package) {
 func camel(s string) string { return strings.ReplaceAll(strings.Title(s), " ", "") }
 
 func (w *writer) writeEnum(t *types.EnumType, name string) {
-	w.writeln("type %s struct { %s interface { is%s(); bits.ReadWriter } }", name, name, name)
+	w.writeln("type %s struct { %s %s__Enum }", name, name, name)
+	w.writeln("type %s__Enum interface { is%s(); bits.ReadWriter }", name, name)
 
 	ename := make([]string, len(t.Elems))
 	for i, e := range t.Elems {
