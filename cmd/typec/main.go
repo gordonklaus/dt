@@ -73,7 +73,7 @@ func (w *writer) writePackage(p *types.Package) {
 	w.writeln("_ = fmt.Print")
 	w.writeln("_ = bits.NewBuffer")
 	w.writeln("_ = maps.Keys[map[int]int]")
-	w.writeln("_ = slices.Sort[int]")
+	w.writeln("_ = slices.Sort[[]int]")
 	w.writeln(")")
 	for _, n := range p.Types {
 		name := camel(n.Name)

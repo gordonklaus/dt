@@ -5,6 +5,7 @@ import (
 
 	"github.com/gordonklaus/data/bits"
 	"github.com/gordonklaus/data/types"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"
 )
 
@@ -24,7 +25,7 @@ func NewMapValue(t *types.MapType) *MapValue {
 }
 
 func (m *MapValue) Write(b *bits.Buffer) {
-	slices.SortFunc(m.Elems, func(a, b MapElem) bool { return less(a.Key, b.Key) })
+	slices.SortFunc(m.Elems, func(a, b MapElem) int { return cmp(a.Key, b.Key) })
 
 	b.WriteVarUint(uint64(len(m.Elems)))
 	for _, e := range m.Elems {
@@ -52,23 +53,42 @@ func (a *MapValue) Read(b *bits.Buffer) error {
 	return nil
 }
 
-func less(a, b Value) bool {
+func cmp(a, b Value) int {
 	switch a := a.(type) {
 	case *IntValue:
 		b := b.(*IntValue)
 		if a.Type.Unsigned && b.Type.Unsigned {
-			return a.GetUint() < b.GetUint()
+			return cmpCompare(a.GetUint(), b.GetUint())
 		}
 		if !a.Type.Unsigned && !b.Type.Unsigned {
-			return a.GetInt() < b.GetInt()
+			return cmpCompare(a.GetInt(), b.GetInt())
 		}
-		panic(fmt.Sprintf("cannot compare int and uint"))
+		panic("cannot compare int and uint")
 	case *FloatValue:
 		b := b.(*FloatValue)
-		return a.x < b.x
+		return cmpCompare(a.x, b.x)
 	case *StringValue:
 		b := b.(*StringValue)
-		return a.X < b.X
+		return cmpCompare(a.X, b.X)
 	}
 	panic(fmt.Sprintf("cannot compare %T and %T", a, b))
+}
+
+// cmpCompare is a copy of cmp.Compare from the Go 1.21 release.
+func cmpCompare[T constraints.Ordered](x, y T) int {
+	xNaN := isNaN(x)
+	yNaN := isNaN(y)
+	if xNaN && yNaN {
+		return 0
+	}
+	if xNaN || x < y {
+		return -1
+	}
+	if yNaN || x > y {
+		return +1
+	}
+	return 0
+}
+func isNaN[T constraints.Ordered](x T) bool {
+	return x != x
 }

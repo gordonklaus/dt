@@ -5,7 +5,7 @@ go 1.18
 require (
 	gioui.org v0.1.0
 	gioui.org/x v0.1.0
-	golang.org/x/exp v0.0.0-20221114191408-850992195362
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/exp/shiny v0.0.0-20220827204233-334a2380cb91
 )
 

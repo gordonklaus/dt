@@ -12,7 +12,7 @@ var (
 	_ = fmt.Print
 	_ = bits.NewBuffer
 	_ = maps.Keys[map[int]int]
-	_ = slices.Sort[int]
+	_ = slices.Sort[[]int]
 )
 
 type Type struct{ Type Type__Enum }
