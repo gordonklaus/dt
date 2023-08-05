@@ -8,7 +8,6 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/unit"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
 	"golang.org/x/exp/slices"
@@ -78,15 +77,15 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		edRec = Record(gtx, ed.ed.Layout)
 	}
 
-	w2 := gtx.Constraints.Max.X / 2
-	l2 := listRec.Dims.Size.X / 2
-	e2 := edRec.Dims.Size.X / 2
+	w2 := gtx.Metric.PxToDp(gtx.Constraints.Max.X / 2)
+	l2 := gtx.Metric.PxToDp(listRec.Dims.Size.X / 2)
+	e2 := gtx.Metric.PxToDp(edRec.Dims.Size.X / 2)
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-		layout.Rigid(layout.Spacer{Width: unit.Dp(w2 - 256 - l2)}.Layout),
+		layout.Rigid(layout.Spacer{Width: w2 - 256 - l2}.Layout),
 		layout.Rigid(listRec.Layout),
-		layout.Rigid(layout.Spacer{Width: unit.Dp(256 - l2 - e2)}.Layout),
+		layout.Rigid(layout.Spacer{Width: 256 - l2 - e2}.Layout),
 		layout.Rigid(edRec.Layout),
-		layout.Rigid(layout.Spacer{Width: unit.Dp(w2 - e2)}.Layout),
+		layout.Rigid(layout.Spacer{Width: w2 - e2}.Layout),
 	)
 }
 
