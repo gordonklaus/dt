@@ -38,7 +38,9 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		return nil, fmt.Errorf("%d bits remaining after reading package", b.Remaining())
 	}
 
-	p := packageFromData(pkg)
+	namedTypes := map[*NamedType]string{}
+
+	p := packageFromData(pkg, namedTypes)
 
 	if err := ValidatePackage(p); err != nil {
 		return nil, err
@@ -46,45 +48,19 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 
 	l.Packages[id] = p
 
-	for _, t := range p.Types {
-		if err := l.setNamedTypes(t.Type); err != nil {
+	for nt, name := range namedTypes {
+		p, err := l.Load(nt.Package)
+		if err != nil {
 			return nil, err
 		}
+		tn := p.Type(name)
+		if tn == nil {
+			return nil, fmt.Errorf("package %s has no type %s", p.Name, name)
+		}
+		nt.TypeName = tn
 	}
 
 	return p, nil
-}
-
-func (l *Loader) setNamedTypes(t Type) error {
-	switch t := t.(type) {
-	case *EnumType:
-		for _, e := range t.Elems {
-			if err := l.setNamedTypes(e.Type); err != nil {
-				return err
-			}
-		}
-	case *StructType:
-		for _, f := range t.Fields {
-			if err := l.setNamedTypes(f.Type); err != nil {
-				return err
-			}
-		}
-	case *ArrayType:
-		return l.setNamedTypes(t.Elem)
-	case *OptionType:
-		return l.setNamedTypes(t.Elem)
-	case *NamedType:
-		p, err := l.Load(t.Package)
-		if err != nil {
-			return err
-		}
-		tn := p.Type(t.Name)
-		if tn == nil {
-			return fmt.Errorf("package %s has no type %s", p.Name, t.Name)
-		}
-		t.Type = tn.Type
-	}
-	return nil
 }
 
 func (l *Loader) Store(id PackageID) error {

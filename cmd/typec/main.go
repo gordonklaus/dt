@@ -186,7 +186,7 @@ func (w *writer) writeType(t types.Type) {
 	case *types.StringType:
 		w.write("string")
 	case *types.NamedType:
-		w.write(camel(t.Name))
+		w.write(camel(t.TypeName.Name))
 	}
 }
 

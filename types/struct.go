@@ -11,13 +11,13 @@ type StructFieldType struct {
 	Type      Type // not *EnumType or *StructType
 }
 
-func structTypeFromData(t *types.Type_Struct) *StructType {
+func structTypeFromData(t *types.Type_Struct, namedTypes map[*NamedType]string) *StructType {
 	typ := &StructType{Fields: make([]*StructFieldType, len(t.Fields))}
 	for i, f := range t.Fields {
 		typ.Fields[i] = &StructFieldType{
 			Name: f.Name,
 			Doc:  f.Doc,
-			Type: typeFromData(f.Type),
+			Type: typeFromData(f.Type, namedTypes),
 		}
 	}
 	return typ

@@ -19,7 +19,7 @@ func (*MapType) isType()    {}
 func (*EnumType) isType()   {}
 func (*StructType) isType() {}
 
-func typeFromData(t types.Type) Type {
+func typeFromData(t types.Type, namedTypes map[*NamedType]string) Type {
 	switch t := t.Type.(type) {
 	case *types.Type_Bool:
 		return &BoolType{}
@@ -30,23 +30,22 @@ func typeFromData(t types.Type) Type {
 	case *types.Type_String:
 		return &StringType{}
 	case *types.Type_Named:
-		return &NamedType{
-			Package: packageIDFromData(t.Package),
-			Name:    t.Name,
-		}
+		nt := &NamedType{Package: packageIDFromData(t.Package)}
+		namedTypes[nt] = t.Name
+		return nt
 	case *types.Type_Option:
-		return &OptionType{Elem: typeFromData(t.Element)}
+		return &OptionType{Elem: typeFromData(t.Element, namedTypes)}
 	case *types.Type_Array:
-		return &ArrayType{Elem: typeFromData(t.Element)}
+		return &ArrayType{Elem: typeFromData(t.Element, namedTypes)}
 	case *types.Type_Map:
 		return &MapType{
-			Key:   typeFromData(t.Key),
-			Value: typeFromData(t.Value),
+			Key:   typeFromData(t.Key, namedTypes),
+			Value: typeFromData(t.Value, namedTypes),
 		}
 	case *types.Type_Enum:
-		return enumTypeFromData(t)
+		return enumTypeFromData(t, namedTypes)
 	case *types.Type_Struct:
-		return structTypeFromData(t)
+		return structTypeFromData(t, namedTypes)
 	}
 	panic("unreached")
 }
@@ -64,7 +63,7 @@ func typeToData(t Type) types.Type {
 	case *NamedType:
 		return types.Type{Type: &types.Type_Named{
 			Package: packageIDToData(t.Package),
-			Name:    t.Name,
+			Name:    t.TypeName.Name,
 		}}
 	case *OptionType:
 		return types.Type{Type: &types.Type_Option{Element: typeToData(t.Elem)}}

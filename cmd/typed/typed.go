@@ -77,7 +77,7 @@ func NewTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeE
 	for _, n := range pkg.Types {
 		n := n
 		t.items = append(t.items, &typeMenuItem{txt: n.Name, new: func() types.Type {
-			return &types.NamedType{Package: &types.PackageID_Current{}, Name: n.Name, Type: n.Type}
+			return &types.NamedType{Package: &types.PackageID_Current{}, TypeName: n}
 		}})
 	}
 	return t

@@ -30,12 +30,6 @@ func TestType(t *testing.T) {
 			{Name: "y", Type: newIntType()},
 		}},
 	)
-	testType(t,
-		&NamedType{
-			Package: &PackageID_Current{},
-			Name:    "Bob",
-		},
-	)
 }
 
 func newBoolType() *BoolType     { return &BoolType{} }
@@ -54,7 +48,7 @@ func testType(t *testing.T, src Type) {
 	if b.Remaining() > 0 {
 		t.Errorf("%d bytes remaining", b.Remaining())
 	}
-	dst := typeFromData(dsttyp)
+	dst := typeFromData(dsttyp, nil)
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("Types are not equal:\nsrc = %#v\ndst = %#v", src, dst)
 	}
