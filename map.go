@@ -24,29 +24,29 @@ func NewMapValue(t *types.MapType) *MapValue {
 	}
 }
 
-func (m *MapValue) Write(b *bits.Buffer) {
+func (m *MapValue) Write(e *bits.Encoder) {
 	slices.SortFunc(m.Elems, func(a, b MapElem) int { return cmp(a.Key, b.Key) })
 
-	b.WriteVarUint(uint64(len(m.Elems)))
-	for _, e := range m.Elems {
-		e.Key.Write(b)
-		e.Value.Write(b)
+	e.WriteVarUint(uint64(len(m.Elems)))
+	for _, el := range m.Elems {
+		el.Key.Write(e)
+		el.Value.Write(e)
 	}
 }
 
-func (a *MapValue) Read(b *bits.Buffer) error {
+func (a *MapValue) Read(d *bits.Decoder) error {
 	var len uint64
-	if err := b.ReadVarUint(&len); err != nil {
+	if err := d.ReadVarUint(&len); err != nil {
 		return err
 	}
 	a.Elems = make([]MapElem, len)
 	for i := range a.Elems {
 		a.Elems[i].Key = NewValue(a.Type.Key)
-		if err := a.Elems[i].Key.Read(b); err != nil {
+		if err := a.Elems[i].Key.Read(d); err != nil {
 			return err
 		}
 		a.Elems[i].Value = NewValue(a.Type.Value)
-		if err := a.Elems[i].Value.Read(b); err != nil {
+		if err := a.Elems[i].Value.Read(d); err != nil {
 			return err
 		}
 	}

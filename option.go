@@ -10,20 +10,20 @@ type OptionValue struct {
 	Elem Value
 }
 
-func (o *OptionValue) Write(b *bits.Buffer) {
-	b.WriteBool(o.Elem != nil)
+func (o *OptionValue) Write(e *bits.Encoder) {
+	e.WriteBool(o.Elem != nil)
 	if o.Elem != nil {
-		o.Elem.Write(b)
+		o.Elem.Write(e)
 	}
 }
 
-func (o *OptionValue) Read(b *bits.Buffer) error {
+func (o *OptionValue) Read(d *bits.Decoder) error {
 	var ok bool
-	if err := b.ReadBool(&ok); err != nil {
+	if err := d.ReadBool(&ok); err != nil {
 		return err
 	} else if ok {
 		o.Elem = NewValue(o.Type.Elem)
-		return o.Elem.Read(b)
+		return o.Elem.Read(d)
 	}
 	return nil
 }

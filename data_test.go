@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -156,13 +157,15 @@ func testValue(t *testing.T, src, dst Value) {
 }
 
 func testValueExpect(t *testing.T, src, dst, expect Value) {
-	b := bits.NewBuffer()
-	src.Write(b)
-	if err := dst.Read(b); err != nil {
+	e := bits.NewEncoder()
+	src.Write(e)
+	d := bits.NewDecoder(bytes.NewBuffer(e.Bytes()))
+	d.SetLimit(e.Size())
+	if err := dst.Read(d); err != nil {
 		t.Fatal(err)
 	}
-	if b.Remaining() > 0 {
-		t.Errorf("%d bits remaining", b.Remaining())
+	if d.Remaining() > 0 {
+		t.Errorf("%d bits remaining", d.Remaining())
 	}
 	if !reflect.DeepEqual(expect, dst) {
 		t.Fatalf("Values are not equal:\nexpect: %#v\ngot:    %#v", expect, dst)

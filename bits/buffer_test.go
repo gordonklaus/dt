@@ -1,13 +1,16 @@
 package bits
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestVarUint(t *testing.T) {
-	b := NewBuffer()
+	e := NewEncoder()
 	x := uint64(1<<64 - 1)
-	b.WriteVarUint(x)
+	e.WriteVarUint(x)
 	var y uint64
-	if err := b.ReadVarUint(&y); err != nil {
+	if err := NewDecoder(bytes.NewBuffer(e.Bytes())).ReadVarUint(&y); err != nil {
 		t.Fatal(err)
 	}
 	if x != y {
@@ -16,11 +19,11 @@ func TestVarUint(t *testing.T) {
 }
 
 func TestVarInt(t *testing.T) {
-	b := NewBuffer()
+	e := NewEncoder()
 	x := int64(1<<63 - 1)
-	b.WriteVarInt(x)
+	e.WriteVarInt(x)
 	var y int64
-	if err := b.ReadVarInt(&y); err != nil {
+	if err := NewDecoder(bytes.NewBuffer(e.Bytes())).ReadVarInt(&y); err != nil {
 		t.Fatal(err)
 	}
 	if x != y {

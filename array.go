@@ -16,22 +16,22 @@ func NewArrayValue(t *types.ArrayType) *ArrayValue {
 	}
 }
 
-func (a *ArrayValue) Write(b *bits.Buffer) {
-	b.WriteVarUint(uint64(len(a.Elems)))
+func (a *ArrayValue) Write(e *bits.Encoder) {
+	e.WriteVarUint(uint64(len(a.Elems)))
 	for _, v := range a.Elems {
-		v.Write(b)
+		v.Write(e)
 	}
 }
 
-func (a *ArrayValue) Read(b *bits.Buffer) error {
+func (a *ArrayValue) Read(d *bits.Decoder) error {
 	var len uint64
-	if err := b.ReadVarUint(&len); err != nil {
+	if err := d.ReadVarUint(&len); err != nil {
 		return err
 	}
 	a.Elems = make([]Value, len)
 	for i := range a.Elems {
 		a.Elems[i] = NewValue(a.Type.Elem)
-		if err := a.Elems[i].Read(b); err != nil {
+		if err := a.Elems[i].Read(d); err != nil {
 			return err
 		}
 	}

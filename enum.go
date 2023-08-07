@@ -19,13 +19,13 @@ func NewEnumValue(t *types.EnumType) *EnumValue {
 	}
 }
 
-func (e *EnumValue) Write(b *bits.Buffer) {
-	b.WriteVarUint_4bit(e.Elem)
-	e.Value.Write(b)
+func (e *EnumValue) Write(enc *bits.Encoder) {
+	enc.WriteVarUint_4bit(e.Elem)
+	e.Value.Write(enc)
 }
 
-func (e *EnumValue) Read(b *bits.Buffer) error {
-	if err := b.ReadVarUint_4bit(&e.Elem); err != nil {
+func (e *EnumValue) Read(d *bits.Decoder) error {
+	if err := d.ReadVarUint_4bit(&e.Elem); err != nil {
 		return err
 	}
 	if e.Elem < uint64(len(e.Type.Elems)) {
@@ -33,7 +33,7 @@ func (e *EnumValue) Read(b *bits.Buffer) error {
 	} else {
 		e.Value = NewValue(&UnknownEnumElementType)
 	}
-	return e.Value.Read(b)
+	return e.Value.Read(d)
 }
 
 var UnknownEnumElementType types.StructType

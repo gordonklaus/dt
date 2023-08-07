@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/gordonklaus/data/bits"
@@ -30,12 +31,12 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 	}
 
 	var pkg types.Package
-	b := bits.NewReadBuffer(buf)
-	if err := pkg.Read(b); err != nil {
+	bb := bytes.NewBuffer(buf)
+	if err := bits.Read(bb, &pkg); err != nil {
 		return nil, err
 	}
-	if b.Remaining() > 7 {
-		return nil, fmt.Errorf("%d bits remaining after reading package", b.Remaining())
+	if bb.Len() > 0 {
+		return nil, fmt.Errorf("%d bytes remaining after reading package", bb.Len())
 	}
 
 	namedTypes := map[*NamedType]string{}
@@ -75,7 +76,7 @@ func (l *Loader) Store(id PackageID) error {
 
 	pkg := packageToData(p)
 
-	b := bits.NewBuffer()
-	pkg.Write(b)
-	return l.storage.Store(id, b.Bytes())
+	enc := bits.NewEncoder()
+	pkg.Write(enc)
+	return l.storage.Store(id, enc.Bytes())
 }

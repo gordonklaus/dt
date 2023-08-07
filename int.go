@@ -43,21 +43,21 @@ func (i *IntValue) SetUint(x uint64) {
 	i.i = int64(x)
 }
 
-func (i *IntValue) Write(b *bits.Buffer) {
+func (i *IntValue) Write(e *bits.Encoder) {
 	if i.Type.Unsigned {
-		b.WriteVarUint(uint64(i.i))
+		e.WriteVarUint(uint64(i.i))
 	} else {
-		b.WriteVarInt(i.i)
+		e.WriteVarInt(i.i)
 	}
 }
 
-func (i *IntValue) Read(b *bits.Buffer) error {
+func (i *IntValue) Read(d *bits.Decoder) error {
 	if i.Type.Unsigned {
 		var x uint64
-		err := b.ReadVarUint(&x)
+		err := d.ReadVarUint(&x)
 		i.i = int64(x)
 		return err
 	} else {
-		return b.ReadVarInt(&i.i)
+		return d.ReadVarInt(&i.i)
 	}
 }

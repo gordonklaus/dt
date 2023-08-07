@@ -14,10 +14,10 @@ func NewBoolValue(t *types.BoolType) *BoolValue {
 	return &BoolValue{Type: t}
 }
 
-func (i *BoolValue) Write(b *bits.Buffer) {
-	b.WriteBool(i.X)
+func (i *BoolValue) Write(e *bits.Encoder) {
+	e.WriteBool(i.X)
 }
 
-func (i *BoolValue) Read(b *bits.Buffer) error {
-	return b.ReadBool(&i.X)
+func (i *BoolValue) Read(d *bits.Decoder) error {
+	return d.ReadBool(&i.X)
 }

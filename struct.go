@@ -30,25 +30,25 @@ func NewStructValue(t *types.StructType) *StructValue {
 	return s
 }
 
-func (s *StructValue) Write(b *bits.Buffer) {
-	b.WriteSize(func() {
+func (s *StructValue) Write(e *bits.Encoder) {
+	e.WriteSize(func() {
 		for _, f := range s.Fields {
-			f.Value.Write(b)
+			f.Value.Write(e)
 		}
 	})
 }
 
-func (s *StructValue) Read(b *bits.Buffer) error {
-	return b.ReadSize(func() error {
+func (s *StructValue) Read(d *bits.Decoder) error {
+	return d.ReadSize(func() error {
 		for _, f := range s.Fields {
-			if b.Remaining() == 0 {
+			if d.Remaining() == 0 {
 				return nil
 			}
-			if err := f.Value.Read(b); err != nil {
+			if err := f.Value.Read(d); err != nil {
 				return err
 			}
 		}
-		if b.Remaining() > 0 {
+		if d.Remaining() > 0 {
 			s.HasUnknownFields = true
 		}
 		return nil

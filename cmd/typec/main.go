@@ -71,7 +71,7 @@ func (w *writer) writePackage(p *types.Package) {
 	w.writeln(`)`)
 	w.writeln("var (")
 	w.writeln("_ = fmt.Print")
-	w.writeln("_ = bits.NewBuffer")
+	w.writeln("_ = bits.NewEncoder")
 	w.writeln("_ = maps.Keys[map[int]int]")
 	w.writeln("_ = slices.Sort[[]int]")
 	w.writeln(")")
@@ -93,7 +93,7 @@ func camel(s string) string { return strings.ReplaceAll(strings.Title(s), " ", "
 
 func (w *writer) writeEnum(t *types.EnumType, name string) {
 	w.writeln("type %s struct { %s %s__Enum }", name, name, name)
-	w.writeln("type %s__Enum interface { is%s(); bits.ReadWriter }", name, name)
+	w.writeln("type %s__Enum interface { is%s(); bits.Value }", name, name)
 
 	ename := make([]string, len(t.Elems))
 	for i, e := range t.Elems {
@@ -101,19 +101,19 @@ func (w *writer) writeEnum(t *types.EnumType, name string) {
 		w.writeln("func (*%s) is%s() {}", ename[i], name)
 	}
 
-	w.writeln("\nfunc (x *%s) Write(b *bits.Buffer) {", name)
+	w.writeln("\nfunc (x *%s) Write(e *bits.Encoder) {", name)
 	w.writeln("switch x.%s.(type) {", name)
 	for i := range t.Elems {
-		w.writeln("case *%s: b.WriteVarUint_4bit(%d)", ename[i], i)
+		w.writeln("case *%s: e.WriteVarUint_4bit(%d)", ename[i], i)
 	}
 	w.writeln(`default: panic(fmt.Sprintf("invalid %s enum value %%T", x))`, name)
 	w.writeln("}")
-	w.writeln("x.%s.Write(b)", name)
+	w.writeln("x.%s.Write(e)", name)
 	w.writeln("}\n")
 
-	w.writeln("func (x *%s) Read(b *bits.Buffer) error {", name)
+	w.writeln("func (x *%s) Read(d *bits.Decoder) error {", name)
 	w.writeln("var i uint64")
-	w.writeln("if err := b.ReadVarUint_4bit(&i); err != nil {")
+	w.writeln("if err := d.ReadVarUint_4bit(&i); err != nil {")
 	w.writeln("return err")
 	w.writeln("}")
 	w.writeln("switch i {")
@@ -122,7 +122,7 @@ func (w *writer) writeEnum(t *types.EnumType, name string) {
 	}
 	w.writeln("default: x.%s = nil // TODO: &%s__Unknown{i}", name, name)
 	w.writeln("}")
-	w.writeln("return x.%s.Read(b)", name)
+	w.writeln("return x.%s.Read(d)", name)
 	w.writeln("}\n")
 
 	for i, e := range t.Elems {
@@ -142,16 +142,16 @@ func (w *writer) writeStruct(t *types.StructType, name string) {
 	}
 	w.writeln("}")
 
-	w.writeln("func (x *%s) Write(b *bits.Buffer) {", name)
-	w.writeln("b.WriteSize(func() {")
+	w.writeln("func (x *%s) Write(e *bits.Encoder) {", name)
+	w.writeln("e.WriteSize(func() {")
 	for i, f := range t.Fields {
 		w.writeTypeWriter(f.Type, "x."+fname[i])
 	}
 	w.writeln("})}\n")
 
 	w.varID = 0
-	w.writeln("func (x *%s) Read(b *bits.Buffer) error {", name)
-	w.writeln("return b.ReadSize(func() error {")
+	w.writeln("func (x *%s) Read(d *bits.Decoder) error {", name)
+	w.writeln("return d.ReadSize(func() error {")
 	for i, f := range t.Fields {
 		w.writeTypeReader(f.Type, "&x."+fname[i])
 	}
@@ -193,24 +193,24 @@ func (w *writer) writeType(t types.Type) {
 func (w *writer) writeTypeWriter(t types.Type, v string) {
 	switch t := t.(type) {
 	case *types.BoolType:
-		w.writeln("b.WriteBool(%s)", v)
+		w.writeln("e.WriteBool(%s)", v)
 	case *types.IntType:
 		if t.Unsigned {
-			w.writeln("b.WriteVarUint(%s)", v)
+			w.writeln("e.WriteVarUint(%s)", v)
 		} else {
-			w.writeln("b.WriteVarInt(%s)", v)
+			w.writeln("e.WriteVarInt(%s)", v)
 		}
 	case *types.FloatType:
-		w.writeln("b.WriteFloat%d(%s)", t.Size, v)
+		w.writeln("e.WriteFloat%d(%s)", t.Size, v)
 
 	case *types.ArrayType:
-		w.writeln("b.WriteVarUint(uint64(len(%s)))", v)
+		w.writeln("e.WriteVarUint(uint64(len(%s)))", v)
 		w.writeln("for _, x := range %s {", v)
 		w.writeTypeWriter(t.Elem, "x")
 		w.writeln("}")
 	case *types.MapType:
 		w.writeln("{")
-		w.writeln("b.WriteVarUint(uint64(len(%s)))", v)
+		w.writeln("e.WriteVarUint(uint64(len(%s)))", v)
 		w.writeln("keys := maps.Keys(%s)", v)
 		w.writeln("slices.Sort(keys)")
 		w.writeln("for _, k := range keys {")
@@ -220,14 +220,14 @@ func (w *writer) writeTypeWriter(t types.Type, v string) {
 		w.writeln("}")
 
 	case *types.OptionType:
-		w.writeln("b.WriteBool(%s != nil)", v)
+		w.writeln("e.WriteBool(%s != nil)", v)
 		w.writeln("if %s != nil {", v)
 		w.writeTypeWriter(t.Elem, "*"+v)
 		w.writeln("}")
 	case *types.StringType:
-		w.writeln("b.WriteString(%s)", v)
+		w.writeln("e.WriteString(%s)", v)
 	case *types.NamedType:
-		w.writeln("(%s).Write(b)", v)
+		w.writeln("(%s).Write(e)", v)
 	}
 }
 
@@ -243,7 +243,7 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	case *types.ArrayType:
 		v = indirect(v)
 		w.writeln("{var len uint64")
-		w.writeln("if err := b.ReadVarUint(&len); err != nil { return err }")
+		w.writeln("if err := d.ReadVarUint(&len); err != nil { return err }")
 		w.write("%s = make([]", v)
 		w.writeType(t.Elem)
 		w.writeln(", len)")
@@ -254,7 +254,7 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	case *types.MapType:
 		v = indirect(v)
 		w.writeln("{var len uint64")
-		w.writeln("if err := b.ReadVarUint(&len); err != nil { return err }")
+		w.writeln("if err := d.ReadVarUint(&len); err != nil { return err }")
 		w.write("%s = make(", v)
 		w.writeType(t)
 		w.writeln(", len)")
@@ -275,7 +275,7 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	case *types.OptionType:
 		v = indirect(v)
 		w.writeln("{var ok bool")
-		w.writeln("if err := b.ReadBool(&ok); err != nil { return err }")
+		w.writeln("if err := d.ReadBool(&ok); err != nil { return err }")
 		w.writeln("if ok {")
 		w.write("%s = new(", v)
 		w.writeType(t.Elem)
@@ -288,20 +288,20 @@ func (w *writer) writeTypeReader(t types.Type, v string) {
 	w.write("if err := ")
 	switch t := t.(type) {
 	case *types.BoolType:
-		w.write("b.ReadBool(%s)", v)
+		w.write("d.ReadBool(%s)", v)
 	case *types.IntType:
 		if t.Unsigned {
-			w.write("b.ReadVarUint(%s)", v)
+			w.write("d.ReadVarUint(%s)", v)
 		} else {
-			w.write("b.ReadVarInt(%s)", v)
+			w.write("d.ReadVarInt(%s)", v)
 		}
 	case *types.FloatType:
-		w.write("b.ReadFloat%d(%s)", t.Size, v)
+		w.write("d.ReadFloat%d(%s)", t.Size, v)
 
 	case *types.StringType:
-		w.write("b.ReadString(%s)", v)
+		w.write("d.ReadString(%s)", v)
 	case *types.NamedType:
-		w.write("(%s).Read(b)", v)
+		w.write("(%s).Read(d)", v)
 	}
 	w.writeln("; err != nil { return err }")
 }

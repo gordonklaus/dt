@@ -30,21 +30,21 @@ func (f *FloatValue) SetFloat64(x float64) {
 	f.x = x
 }
 
-func (f *FloatValue) Write(b *bits.Buffer) {
+func (f *FloatValue) Write(e *bits.Encoder) {
 	if f.Type.Size == 32 {
-		b.WriteFloat32(float32(f.x))
+		e.WriteFloat32(float32(f.x))
 	} else {
-		b.WriteFloat64(f.x)
+		e.WriteFloat64(f.x)
 	}
 }
 
-func (f *FloatValue) Read(b *bits.Buffer) error {
+func (f *FloatValue) Read(d *bits.Decoder) error {
 	if f.Type.Size == 32 {
 		var x float32
-		err := b.ReadFloat32(&x)
+		err := d.ReadFloat32(&x)
 		f.x = float64(x)
 		return err
 	} else {
-		return b.ReadFloat64(&f.x)
+		return d.ReadFloat64(&f.x)
 	}
 }

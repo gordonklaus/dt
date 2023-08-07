@@ -6,7 +6,7 @@ import (
 )
 
 type Value interface {
-	bits.ReadWriter
+	bits.Value
 }
 
 func NewValue(t types.Type) Value {
@@ -28,7 +28,7 @@ func NewValue(t types.Type) Value {
 	case *types.MapType:
 		return NewMapValue(t)
 	case *types.NamedType:
-		return NewValue(t.Type)
+		return NewValue(t.TypeName.Type)
 	}
 	return nil
 }

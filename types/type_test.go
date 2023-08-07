@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -39,14 +40,16 @@ func newStringType() *StringType { return &StringType{} }
 
 func testType(t *testing.T, src Type) {
 	srctyp := typeToData(src)
-	b := bits.NewBuffer()
-	srctyp.Write(b)
+	e := bits.NewEncoder()
+	srctyp.Write(e)
 	var dsttyp types.Type
-	if err := dsttyp.Read(b); err != nil {
+	d := bits.NewDecoder(bytes.NewBuffer(e.Bytes()))
+	d.SetLimit(e.Size())
+	if err := dsttyp.Read(d); err != nil {
 		t.Fatal(err)
 	}
-	if b.Remaining() > 0 {
-		t.Errorf("%d bytes remaining", b.Remaining())
+	if d.Remaining() > 0 {
+		t.Errorf("%d bits remaining", d.Remaining())
 	}
 	dst := typeFromData(dsttyp, nil)
 	if !reflect.DeepEqual(src, dst) {

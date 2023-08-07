@@ -14,10 +14,10 @@ func NewStringValue(t *types.StringType) *StringValue {
 	return &StringValue{Type: t}
 }
 
-func (i *StringValue) Write(b *bits.Buffer) {
-	b.WriteString(i.X)
+func (i *StringValue) Write(e *bits.Encoder) {
+	e.WriteString(i.X)
 }
 
-func (i *StringValue) Read(b *bits.Buffer) error {
-	return b.ReadString(&i.X)
+func (i *StringValue) Read(d *bits.Decoder) error {
+	return d.ReadString(&i.X)
 }
