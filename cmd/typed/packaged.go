@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"image/color"
+	"slices"
 
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -10,7 +11,6 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/data/types"
-	"golang.org/x/exp/slices"
 )
 
 type PackageEditor struct {

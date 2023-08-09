@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go/format"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -41,7 +40,7 @@ func main() {
 	w := &writer{}
 	w.writePackage(pkg)
 	buf := gofmt(gofmt(w.buf.Bytes())) // twice because gofmt isn't quite idempotent
-	if err := ioutil.WriteFile(filepath.Join(*out, "pkg.dt.go"), buf, fs.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(*out, "pkg.dt.go"), buf, fs.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -64,10 +63,10 @@ func (w *writer) writePackage(p *types.Package) {
 	w.writeln("package %s", p.Name)
 	w.writeln(`import (`)
 	w.writeln(`"fmt"`)
+	w.writeln(`"slices"`)
 	w.writeln(``)
 	w.writeln(`"github.com/gordonklaus/data/bits"`)
 	w.writeln(`"golang.org/x/exp/maps"`)
-	w.writeln(`"golang.org/x/exp/slices"`)
 	w.writeln(`)`)
 	w.writeln("var (")
 	w.writeln("_ = fmt.Print")

@@ -2,10 +2,10 @@ package types
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/gordonklaus/data/bits"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 var (

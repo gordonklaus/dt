@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"slices"
 
 	"gioui.org/f32"
 	"gioui.org/io/key"
@@ -11,7 +12,6 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"github.com/gordonklaus/data/types"
-	"golang.org/x/exp/slices"
 )
 
 type StructTypeEditor struct {
