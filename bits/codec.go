@@ -251,24 +251,20 @@ func (d *Decoder) ReadFloat64(x *float64) error {
 }
 
 func (e *Encoder) WriteString(s string) {
-	e.WriteVarUint(uint64(len(s)))
 	e.WriteBytes([]byte(s))
 }
 
 func (d *Decoder) ReadString(s *string) error {
-	var len uint64
-	if err := d.ReadVarUint(&len); err != nil {
+	var b []byte
+	if err := d.ReadBytes(&b); err != nil {
 		return err
 	}
-	bb := make([]byte, len)
-	if err := d.ReadBytes(bb); err != nil {
-		return err
-	}
-	*s = string(bb)
+	*s = string(b)
 	return nil
 }
 
 func (e *Encoder) WriteBytes(x []byte) {
+	e.WriteVarUint(uint64(len(x)))
 	e.grow(len(x))
 	for len(x) >= 7 {
 		*e.x() |= *(*uint64)(unsafe.Pointer(&x[0])) << e.i()
@@ -282,28 +278,34 @@ func (e *Encoder) WriteBytes(x []byte) {
 	}
 }
 
-func (d *Decoder) ReadBytes(x []byte) error {
-	if d.Remaining() < 8*uint64(len(x)) {
+func (d *Decoder) ReadBytes(x *[]byte) error {
+	var n uint64
+	if err := d.ReadVarUint(&n); err != nil {
+		return err
+	}
+	if d.Remaining() < 8*n {
 		return io.ErrUnexpectedEOF
 	}
 
-	for len(x) >= 7 {
+	b := make([]byte, n)
+	*x = b
+	for len(b) >= 7 {
 		if err := d.read(7); err != nil {
 			return err
 		}
-		*(*uint64)(unsafe.Pointer(&x[0])) = d.x() >> d.i() & (1<<56 - 1)
+		*(*uint64)(unsafe.Pointer(&b[0])) = d.x() >> d.i() & (1<<56 - 1)
 		d.j += 56
 		d.b[0] = d.b[7]
-		x = x[7:]
+		b = b[7:]
 	}
-	for len(x) > 0 {
+	for len(b) > 0 {
 		if err := d.read(1); err != nil {
 			return err
 		}
-		x[0] = byte(d.x() >> d.i())
+		b[0] = byte(d.x() >> d.i())
 		d.j += 8
 		d.b[0] = d.b[1]
-		x = x[1:]
+		b = b[1:]
 	}
 
 	return nil
