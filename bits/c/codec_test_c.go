@@ -79,7 +79,7 @@ func testValues[T comparable](t *testing.T, write func(*C.dt_encoder, T) C.dt_er
 				t.Fatalf("read_size failed (offset=%d, value=%#v): %v", offset, x, err)
 			}
 			if n := d.n - d.j; n != 0 {
-				t.Errorf("%d bits remaining after read_size (offset=%d, value=%#v", n, offset, x)
+				t.Fatalf("%d bits remaining (offset=%d, value=%#v", n, offset, x)
 			}
 			if x != y {
 				t.Fatalf("expected %#v, got %#v (offset %d)", x, y, offset)
@@ -87,6 +87,52 @@ func testValues[T comparable](t *testing.T, write func(*C.dt_encoder, T) C.dt_er
 			C.dt_delete_encoder(&e)
 		}
 	}
+}
+
+func testReadSizeSkipsExtraBits(t *testing.T) {
+	e := C.dt_new_encoder()
+	h := cgo.NewHandle(func(e *C.dt_encoder) C.dt_error {
+		for i := 0; i < 37; i++ {
+			C.dt_write_bool(e, false)
+		}
+		return C.dt_ok
+	})
+	if err := C.dt_write_size(&e, (*C.dt_write_size_fn)(C.c_write_size_callback), unsafe.Pointer(&h)); err != C.dt_ok {
+		t.Fatalf("write_size failed: %v", err)
+	}
+	C.dt_write_bool(&e, true)
+	buf = unsafe.Slice(C.dt_encoder_bytes(&e), C.dt_encoder_len(&e))
+
+	fmt.Printf("buf: %x\n", buf)
+
+	d := C.dt_new_decoder((*C.dt_read_fn)(C.c_read), nil)
+	d.n = e.n
+	h = cgo.NewHandle(func(d *C.dt_decoder) C.dt_error {
+		for i := 0; i < 11; i++ {
+			var b bool
+			if err := C.dt_read_bool(d, (*C.bool)(&b)); err != C.dt_ok {
+				t.Fatalf("read_bool failed: %v", err)
+			}
+			if b {
+				t.Fatalf("expected false from read_bool")
+			}
+		}
+		return C.dt_ok
+	})
+	if err := C.dt_read_size(&d, (*C.dt_read_size_fn)(C.c_read_size_callback), unsafe.Pointer(&h)); err != C.dt_ok {
+		t.Fatalf("read_size failed: %v", err)
+	}
+	var b bool
+	if err := C.dt_read_bool(&d, (*C.bool)(&b)); err != C.dt_ok {
+		t.Fatalf("read_bool failed: %v", err)
+	}
+	if !b {
+		t.Fatalf("expected true from read_bool")
+	}
+	if n := d.n - d.j; n != 0 {
+		t.Fatalf("%d bits remaining", n)
+	}
+	C.dt_delete_encoder(&e)
 }
 
 //export go_write_size_callback

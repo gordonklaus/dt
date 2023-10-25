@@ -31,6 +31,7 @@ func testValues[T comparable](t *testing.T, w func(*Encoder, T), r func(*Decoder
 				w(e, x)
 			})
 			d := NewDecoder(bytes.NewBuffer(e.Bytes()))
+			d.SetLimit(e.Size())
 			var y T
 			if err := d.ReadSize(func() error {
 				for i := i; i > 0; i-- {
@@ -46,10 +47,50 @@ func testValues[T comparable](t *testing.T, w func(*Encoder, T), r func(*Decoder
 			}); err != nil {
 				t.Fatalf("ReadSize failed (value=%v, offset=%d): %v", x, i, err)
 			}
+			if d.Remaining() != 0 {
+				t.Fatalf("%d bits remaining (value=%v, offset=%d)", d.Remaining(), x, i)
+			}
 			if x != y {
 				t.Fatalf("expected %v, got %v (offset=%d)", x, y, i)
 			}
 		}
+	}
+}
+
+func TestReadSizeSkipsExtraBits(t *testing.T) {
+	e := NewEncoder()
+	e.WriteSize(func() {
+		for i := 0; i < 37; i++ {
+			e.WriteBool(false)
+		}
+	})
+	e.WriteBool(true)
+
+	d := NewDecoder(bytes.NewBuffer(e.Bytes()))
+	d.SetLimit(e.Size())
+	if err := d.ReadSize(func() error {
+		for i := 0; i < 11; i++ {
+			var b bool
+			if err := d.ReadBool(&b); err != nil {
+				return err
+			}
+			if b {
+				t.Fatalf("expected false from ReadBool")
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("ReadSize failed: %v", err)
+	}
+	var b bool
+	if err := d.ReadBool(&b); err != nil {
+		t.Fatalf("ReadBool failed: %v", err)
+	}
+	if !b {
+		t.Fatalf("expected true from ReadBool")
+	}
+	if d.Remaining() != 0 {
+		t.Fatalf("%d bits remaining", d.Remaining())
 	}
 }
 
