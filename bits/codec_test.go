@@ -7,6 +7,7 @@ import (
 )
 
 func TestCodec(t *testing.T) {
+	testValues(t, func(*Encoder, bool) {}, func(*Decoder, *bool) error { return nil }, false)
 	testValues(t, (*Encoder).WriteBool, (*Decoder).ReadBool, false, true)
 	testValues(t, (*Encoder).WriteUint32, (*Decoder).ReadUint32, 0, 1, 2, 3, math.MaxUint32)
 	testValues(t, (*Encoder).WriteUint64, (*Decoder).ReadUint64, 0, 1, 2, 3, math.MaxUint64)
