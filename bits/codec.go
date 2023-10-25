@@ -93,8 +93,8 @@ func (d *Decoder) ReadBool(x *bool) error {
 
 func (e *Encoder) WriteUint32(x uint32) {
 	*e.x() |= uint64(x) << e.i()
-	e.grow(4)
 	e.n += 32
+	e.grow(4)
 }
 
 func (d *Decoder) ReadUint32(x *uint32) error {
@@ -112,9 +112,9 @@ func (d *Decoder) ReadUint32(x *uint32) error {
 
 func (e *Encoder) WriteUint64(x uint64) {
 	*e.x() |= x << e.i()
+	e.n += 64
 	e.grow(8)
 	*e.x() |= x >> (64 - e.i())
-	e.n += 64
 }
 
 func (d *Decoder) ReadUint64(x *uint64) error {
