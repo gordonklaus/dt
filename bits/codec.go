@@ -270,15 +270,15 @@ func (d *Decoder) ReadString(s *string) error {
 
 func (e *Encoder) WriteBytes(x []byte) {
 	e.grow(len(x))
-	x = append(x, make([]byte, 7)...)[:len(x)]
-	for len(x) > 0 {
+	for len(x) >= 7 {
 		*e.x() |= *(*uint64)(unsafe.Pointer(&x[0])) << e.i()
-		if len(x) <= 7 {
-			e.n += 8 * uint64(len(x))
-			break
-		}
 		e.n += 56
 		x = x[7:]
+	}
+	for len(x) > 0 {
+		*e.x() |= uint64(x[0]) << e.i()
+		e.n += 8
+		x = x[1:]
 	}
 }
 
@@ -287,29 +287,24 @@ func (d *Decoder) ReadBytes(x []byte) error {
 		return io.ErrUnexpectedEOF
 	}
 
-	y := make([]byte, len(x)+7)[:len(x)]
-	z := y
-	for len(z) > 0 {
-		n := 7
-		if len(z) < 7 {
-			n = len(z)
-		}
-		if err := d.read(uint64(n)); err != nil {
+	for len(x) >= 7 {
+		if err := d.read(7); err != nil {
 			return err
 		}
-
-		*(*uint64)(unsafe.Pointer(&z[0])) |= d.x() >> d.i() & (1<<56 - 1)
-		if len(z) <= 7 {
-			d.j += 8 * uint64(len(z))
-			d.b[0] = d.b[len(z)]
-			break
-		}
+		*(*uint64)(unsafe.Pointer(&x[0])) = d.x() >> d.i() & (1<<56 - 1)
 		d.j += 56
 		d.b[0] = d.b[7]
-		z = z[7:]
+		x = x[7:]
 	}
-
-	copy(x, y)
+	for len(x) > 0 {
+		if err := d.read(1); err != nil {
+			return err
+		}
+		x[0] = byte(d.x() >> d.i())
+		d.j += 8
+		d.b[0] = d.b[1]
+		x = x[1:]
+	}
 
 	return nil
 }
