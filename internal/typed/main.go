@@ -1,12 +1,7 @@
-package main
+package typed
 
 import (
-	"errors"
-	"flag"
-	"io/fs"
-	"log"
-	"os"
-	"path/filepath"
+	"fmt"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -18,36 +13,17 @@ import (
 	"github.com/gordonklaus/data/types"
 )
 
-func main() {
-	go Main()
-	app.Main()
-}
-
 type C = layout.Context
 type D = layout.Dimensions
 
 var theme = material.NewTheme(gofont.Collection())
 
-func Main() {
-	flag.Parse()
-	dir := "."
-	if flag.NArg() > 0 {
-		dir = flag.Arg(0)
-	}
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
+func Run(loader *types.Loader, pkg *types.Package) {
+	go run(loader, pkg)
+	app.Main()
+}
 
-	loader := types.NewLoader(types.NewStorage(dir))
-	pkg, err := loader.Load(&types.PackageID_Current{}) // TODO: Resolve current package ID based on current directory and source control/module configuration.
-	if errors.Is(err, fs.ErrNotExist) {
-		pkg = &types.Package{Name: filepath.Base(dir)}
-		loader.Packages[&types.PackageID_Current{}] = pkg
-	} else if err != nil {
-		log.Fatal(err)
-	}
-
+func run(loader *types.Loader, pkg *types.Package) {
 	w := app.NewWindow(app.Title("typEd"))
 	w.Perform(system.ActionMaximize)
 
@@ -66,10 +42,8 @@ func Main() {
 			e.Frame(&ops)
 		case system.DestroyEvent:
 			if e.Err != nil {
-				log.Print(e.Err)
-				os.Exit(1)
+				fmt.Println(e.Err)
 			}
-			os.Exit(0)
 		}
 	}
 }

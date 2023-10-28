@@ -1,12 +1,10 @@
-package main
+package typec
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"go/format"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,34 +12,18 @@ import (
 	"github.com/gordonklaus/data/types"
 )
 
-func main() {
-	out := flag.String("out", ".", "output directory")
-	flag.Parse()
-
-	dir := "."
-	if flag.NArg() > 0 {
-		dir = flag.Arg(0)
-	}
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	loader := types.NewLoader(types.NewStorage(dir))
-	pkg, err := loader.Load(&types.PackageID_Current{}) // TODO: Resolve current package ID based on current directory and source control/module configuration.
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := os.MkdirAll(*out, os.ModePerm); err != nil {
-		log.Fatal(err)
+func Run(loader *types.Loader, pkg *types.Package, out string) {
+	if err := os.MkdirAll(out, os.ModePerm); err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	w := &writer{}
 	w.writePackage(pkg)
 	buf := gofmt(gofmt(w.buf.Bytes())) // twice because gofmt isn't quite idempotent
-	if err := os.WriteFile(filepath.Join(*out, "pkg.dt.go"), buf, fs.ModePerm); err != nil {
-		log.Fatal(err)
+	if err := os.WriteFile(filepath.Join(out, "pkg.dt.go"), buf, fs.ModePerm); err != nil {
+		fmt.Println(err)
+		return
 	}
 }
 
@@ -49,7 +31,8 @@ func gofmt(src []byte) []byte {
 	buf, err := format.Source(src)
 	if err != nil {
 		fmt.Println(string(src))
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	return buf
 }
