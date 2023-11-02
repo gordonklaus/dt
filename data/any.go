@@ -1,6 +1,6 @@
 package data
 
-import "github.com/gordonklaus/data/types"
+import "github.com/gordonklaus/dt/types"
 
 type Any struct {
 	Type  types.Type

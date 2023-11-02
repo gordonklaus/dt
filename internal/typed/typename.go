@@ -5,7 +5,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 type TypeNameEditor struct {

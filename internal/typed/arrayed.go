@@ -3,7 +3,7 @@ package typed
 import (
 	"gioui.org/layout"
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 type ArrayTypeEditor struct {

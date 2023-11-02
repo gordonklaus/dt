@@ -11,7 +11,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 type EnumTypeEditor struct {

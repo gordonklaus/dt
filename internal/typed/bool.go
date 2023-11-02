@@ -2,7 +2,7 @@ package typed
 
 import (
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 type BoolTypeEditor struct {

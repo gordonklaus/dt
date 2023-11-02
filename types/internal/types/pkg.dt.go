@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/gordonklaus/data/bits"
+	"github.com/gordonklaus/dt/bits"
 	"golang.org/x/exp/maps"
 )
 

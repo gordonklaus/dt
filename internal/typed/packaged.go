@@ -10,7 +10,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget/material"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 type PackageEditor struct {

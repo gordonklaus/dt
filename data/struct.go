@@ -1,8 +1,8 @@
 package data
 
 import (
-	"github.com/gordonklaus/data/bits"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/bits"
+	"github.com/gordonklaus/dt/types"
 )
 
 type StructValue struct {

@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/gordonklaus/data/internal/typec"
-	"github.com/gordonklaus/data/internal/typed"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/internal/typec"
+	"github.com/gordonklaus/dt/internal/typed"
+	"github.com/gordonklaus/dt/types"
 )
 
 func main() {

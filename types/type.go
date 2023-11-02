@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/gordonklaus/data/types/internal/types"
+	"github.com/gordonklaus/dt/types/internal/types"
 )
 
 type Type interface {

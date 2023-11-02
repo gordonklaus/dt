@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gordonklaus/data/bits"
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/bits"
+	"github.com/gordonklaus/dt/types"
 )
 
 func TestBasic(t *testing.T) {

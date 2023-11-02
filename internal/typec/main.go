@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gordonklaus/data/types"
+	"github.com/gordonklaus/dt/types"
 )
 
 func Run(loader *types.Loader, pkg *types.Package, out string) {
@@ -48,7 +48,7 @@ func (w *writer) writePackage(p *types.Package) {
 	w.writeln(`"fmt"`)
 	w.writeln(`"slices"`)
 	w.writeln(``)
-	w.writeln(`"github.com/gordonklaus/data/bits"`)
+	w.writeln(`"github.com/gordonklaus/dt/bits"`)
 	w.writeln(`"golang.org/x/exp/maps"`)
 	w.writeln(`)`)
 	w.writeln("var (")

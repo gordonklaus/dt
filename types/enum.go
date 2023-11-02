@@ -1,6 +1,6 @@
 package types
 
-import "github.com/gordonklaus/data/types/internal/types"
+import "github.com/gordonklaus/dt/types/internal/types"
 
 type EnumType struct {
 	Elems []*EnumElemType

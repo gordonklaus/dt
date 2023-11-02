@@ -1,4 +1,4 @@
-module github.com/gordonklaus/data
+module github.com/gordonklaus/dt
 
 go 1.21
 
