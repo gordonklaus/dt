@@ -22,13 +22,14 @@ func main() {
 	}
 	cmd := os.Args[1]
 	os.Args = slices.Delete(os.Args, 1, 2)
-	var outdir string
+	var lang, outdir string
 	switch cmd {
 	default:
 		fmt.Printf("unknown command %q\n", cmd)
 		return
 	case "edit":
 	case "build":
+		flag.StringVar(&lang, "lang", "go", "target language")
 		flag.StringVar(&outdir, "out", ".", "output directory")
 	}
 
@@ -55,9 +56,17 @@ func main() {
 
 	switch cmd {
 	case "edit":
-		typed.Run(loader, pkg)
+		typed.Edit(loader, pkg)
 	case "build":
-		typec.Run(loader, pkg, outdir)
+		switch lang {
+		default:
+			fmt.Printf("unknown target langauge %q\n", lang)
+			return
+		case "go":
+			typec.BuildGo(loader, pkg, outdir)
+		case "C":
+			typec.BuildC(loader, pkg, outdir)
+		}
 	}
 }
 

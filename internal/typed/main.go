@@ -18,12 +18,12 @@ type D = layout.Dimensions
 
 var theme = material.NewTheme(gofont.Collection())
 
-func Run(loader *types.Loader, pkg *types.Package) {
-	go run(loader, pkg)
+func Edit(loader *types.Loader, pkg *types.Package) {
+	go edit(loader, pkg)
 	app.Main()
 }
 
-func run(loader *types.Loader, pkg *types.Package) {
+func edit(loader *types.Loader, pkg *types.Package) {
 	w := app.NewWindow(app.Title("typEd"))
 	w.Perform(system.ActionMaximize)
 

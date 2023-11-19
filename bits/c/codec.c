@@ -1,5 +1,21 @@
 #include "codec.h"
 
+// type Value interface {
+// 	Write(*dt_encoder)
+// 	Read(*dt_decoder) error
+// }
+
+// Write(w io.Writer, v Value) error {
+// 	e := Newdt_encoder()
+// 	v.Write(e)
+// 	_, err := w.Write(e->Bytes())
+// 	return err;
+// }
+
+// Read(r io.Reader, v Value) error {
+// 	return v.Read(Newdt_decoder(r))
+// }
+
 dt_encoder dt_new_encoder() {
 	dt_encoder e = {
 		.b   = calloc(8, 1),
@@ -241,7 +257,7 @@ dt_error dt_read_float32(dt_decoder *d, float *x) { return dt_read_uint32(d, (ui
 dt_error dt_write_float64(dt_encoder *e, double x) { return dt_write_uint64(e, *(uint64_t*)&x); }
 dt_error dt_read_float64(dt_decoder *d, double *x) { return dt_read_uint64(d, (uint64_t*)x); }
 
-dt_error dt_bytes_set(dt_bytes *b, uint8_t *data, uint64_t len) {
+dt_error dt_bytes_set(dt_bytes *b, uint64_t len, uint8_t *data) {
 	dt_bytes_delete(b);
 	b->data = calloc(len, 1);
 	if (b->data == NULL && len > 0) {
@@ -377,9 +393,11 @@ dt_error dt_read_size(dt_decoder *d, dt_read_size_fn f, void *user_data) {
 	uint64_t n = d->n;
 	d->n = d->j + size;
 
-	err = f(d, user_data);
-	if (err != dt_ok) {
-		return err;
+	if (f != NULL) {
+		err = f(d, user_data);
+		if (err != dt_ok) {
+			return err;
+		}
 	}
 
 	uint64_t k = (d->n-1)/8 - (d->j-1)/8;

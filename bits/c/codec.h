@@ -13,6 +13,8 @@ typedef enum {
 	dt_error_out_of_memory,
 } dt_error;
 
+int dt_unknown_enum_tag = -1;
+
 typedef struct {
 	uint8_t *b;
 	uint64_t n, len;
@@ -60,13 +62,13 @@ dt_error dt_write_float64(dt_encoder *e, double x);
 dt_error dt_read_float64(dt_decoder *d, double *x);
 
 typedef struct {
-	uint8_t *data;
 	uint64_t len;
+	uint8_t *data;
 } dt_bytes;
 
 typedef dt_bytes dt_string;
 
-dt_error dt_bytes_set(dt_bytes *b, uint8_t *data, uint64_t len);
+dt_error dt_bytes_set(dt_bytes *b, uint64_t len, uint8_t *data);
 void dt_bytes_delete(dt_bytes *b);
 
 dt_error dt_write_bytes(dt_encoder *e, dt_bytes x);
