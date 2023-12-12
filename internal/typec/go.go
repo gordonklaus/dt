@@ -141,7 +141,7 @@ func (w *goWriter) writeStruct(t *types.StructType, name string) {
 	w.writeln("func (x *%s) Read(d *bits.Decoder) error {", name)
 	w.writeln("return d.ReadSize(func() error {")
 	for i, f := range t.Fields {
-		// TODO: Return if remaining == 0.
+		w.writeln("if d.Remaining() == 0 { return nil }")
 		w.writeTypeReader(f.Type, "&x."+fname[i])
 	}
 	w.writeln("return nil})}\n")

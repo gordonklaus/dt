@@ -219,7 +219,9 @@ func (w *cWriter) writeStruct(t *types.StructType, name string) {
 
 	w.cln("static dt_error %s___read_fields(dt_decoder *d, %s *x) {", name, name)
 	for i, f := range t.Fields {
-		// TODO: Return if remaining == 0.
+		w.cln("if (dt_remaining(d) == 0) {")
+		w.cln("return dt_ok;")
+		w.cln("}")
 		w.writeTypeReader(f.Type, "&x->"+fname[i])
 	}
 	w.cln("return dt_ok;")

@@ -34,6 +34,8 @@ dt_decoder dt_new_decoder(dt_read_fn r, void *user_data);
 
 void dt_delete_encoder(dt_encoder *e);
 
+uint64_t dt_remaining(dt_decoder *d) { return d->n - d->j; }
+
 dt_error dt_write_bool(dt_encoder *e, bool x);
 dt_error dt_read_bool(dt_decoder *d, bool *x);
 

@@ -40,8 +40,6 @@ void dt_delete_encoder(dt_encoder *e) {
 	e->len = 0;
 }
 
-static uint64_t dt_remaining(dt_decoder *d) { return d->n - d->j; }
-
 #define ei (e->n % 8)
 #define ex ((uint64_t*)&e->b[e->n/8])
 

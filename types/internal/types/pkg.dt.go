@@ -120,6 +120,9 @@ func (x *Type_Int) Write(e *bits.Encoder) {
 
 func (x *Type_Int) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadBool(&x.Unsigned); err != nil {
 			return err
 		}
@@ -139,6 +142,9 @@ func (x *Type_Float) Write(e *bits.Encoder) {
 
 func (x *Type_Float) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadVarUint(&x.Size); err != nil {
 			return err
 		}
@@ -161,6 +167,9 @@ func (x *Type_Enum) Write(e *bits.Encoder) {
 
 func (x *Type_Enum) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		{
 			var len uint64
 			if err := d.ReadVarUint(&len); err != nil {
@@ -192,6 +201,9 @@ func (x *Type_Struct) Write(e *bits.Encoder) {
 
 func (x *Type_Struct) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		{
 			var len uint64
 			if err := d.ReadVarUint(&len); err != nil {
@@ -220,6 +232,9 @@ func (x *Type_Array) Write(e *bits.Encoder) {
 
 func (x *Type_Array) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := (&x.Element).Read(d); err != nil {
 			return err
 		}
@@ -241,8 +256,14 @@ func (x *Type_Map) Write(e *bits.Encoder) {
 
 func (x *Type_Map) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := (&x.Key).Read(d); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		if err := (&x.Value).Read(d); err != nil {
 			return err
@@ -263,6 +284,9 @@ func (x *Type_Option) Write(e *bits.Encoder) {
 
 func (x *Type_Option) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := (&x.Element).Read(d); err != nil {
 			return err
 		}
@@ -297,8 +321,14 @@ func (x *Type_Named) Write(e *bits.Encoder) {
 
 func (x *Type_Named) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := (&x.Package).Read(d); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		if err := d.ReadString(&x.Name); err != nil {
 			return err
@@ -338,11 +368,20 @@ func (x *EnumElement) Write(e *bits.Encoder) {
 
 func (x *EnumElement) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Name); err != nil {
 			return err
 		}
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Doc); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		if err := (&x.Type).Read(d); err != nil {
 			return err
@@ -367,11 +406,20 @@ func (x *StructField) Write(e *bits.Encoder) {
 
 func (x *StructField) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Name); err != nil {
 			return err
 		}
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Doc); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		if err := (&x.Type).Read(d); err != nil {
 			return err
@@ -399,11 +447,20 @@ func (x *Package) Write(e *bits.Encoder) {
 
 func (x *Package) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Name); err != nil {
 			return err
 		}
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Doc); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		{
 			var len uint64
@@ -437,11 +494,20 @@ func (x *TypeName) Write(e *bits.Encoder) {
 
 func (x *TypeName) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Name); err != nil {
 			return err
 		}
+		if d.Remaining() == 0 {
+			return nil
+		}
 		if err := d.ReadString(&x.Doc); err != nil {
 			return err
+		}
+		if d.Remaining() == 0 {
+			return nil
 		}
 		if err := (&x.Type).Read(d); err != nil {
 			return err
