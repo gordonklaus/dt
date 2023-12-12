@@ -83,6 +83,7 @@ func (w *goWriter) writeEnum(t *types.EnumType, name string) {
 		ename[i] = name + "_" + camel(e.Name)
 		w.writeln("func (*%s) is%s() {}", ename[i], name)
 	}
+	w.writeln("func (*%s__Unknown) is%s() {}", name, name)
 
 	w.writeln("\nfunc (x *%s) Write(e *bits.Encoder) {", name)
 	w.writeln("switch x.%s.(type) {", name)
@@ -103,7 +104,7 @@ func (w *goWriter) writeEnum(t *types.EnumType, name string) {
 	for i := range t.Elems {
 		w.writeln("case %d: x.%s = new(%s)", i, name, ename[i])
 	}
-	w.writeln("default: x.%s = nil // TODO: &%s__Unknown{i}", name, name)
+	w.writeln("default: x.%s = &%s__Unknown{I: i}", name, name)
 	w.writeln("}")
 	w.writeln("return x.%s.Read(d)", name)
 	w.writeln("}\n")
@@ -111,6 +112,7 @@ func (w *goWriter) writeEnum(t *types.EnumType, name string) {
 	for i, e := range t.Elems {
 		w.writeStruct(e.Type.(*types.StructType), ename[i])
 	}
+	w.writeStruct(&types.StructType{}, name+"__Unknown")
 }
 
 func (w *goWriter) writeStruct(t *types.StructType, name string) {
@@ -122,6 +124,9 @@ func (w *goWriter) writeStruct(t *types.StructType, name string) {
 		w.writeln("\n// %s", f.Doc)
 		w.write("%s ", fname[i])
 		w.writeType(f.Type)
+	}
+	if strings.HasSuffix(name, "__Unknown") {
+		w.writeln("I uint64")
 	}
 	w.writeln("}")
 

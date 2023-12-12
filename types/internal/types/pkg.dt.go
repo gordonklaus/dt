@@ -23,16 +23,17 @@ type Type__Enum interface {
 	bits.Value
 }
 
-func (*Type_Bool) isType()   {}
-func (*Type_Int) isType()    {}
-func (*Type_Float) isType()  {}
-func (*Type_Enum) isType()   {}
-func (*Type_Struct) isType() {}
-func (*Type_Array) isType()  {}
-func (*Type_Map) isType()    {}
-func (*Type_Option) isType() {}
-func (*Type_String) isType() {}
-func (*Type_Named) isType()  {}
+func (*Type_Bool) isType()     {}
+func (*Type_Int) isType()      {}
+func (*Type_Float) isType()    {}
+func (*Type_Enum) isType()     {}
+func (*Type_Struct) isType()   {}
+func (*Type_Array) isType()    {}
+func (*Type_Map) isType()      {}
+func (*Type_Option) isType()   {}
+func (*Type_String) isType()   {}
+func (*Type_Named) isType()    {}
+func (*Type__Unknown) isType() {}
 
 func (x *Type) Write(e *bits.Encoder) {
 	switch x.Type.(type) {
@@ -89,7 +90,7 @@ func (x *Type) Read(d *bits.Decoder) error {
 	case 9:
 		x.Type = new(Type_Named)
 	default:
-		x.Type = nil // TODO: &Type__Unknown{i}
+		x.Type = &Type__Unknown{I: i}
 	}
 	return x.Type.Read(d)
 }
@@ -306,6 +307,21 @@ func (x *Type_Named) Read(d *bits.Decoder) error {
 	})
 }
 
+type Type__Unknown struct {
+	I uint64
+}
+
+func (x *Type__Unknown) Write(e *bits.Encoder) {
+	e.WriteSize(func() {
+	})
+}
+
+func (x *Type__Unknown) Read(d *bits.Decoder) error {
+	return d.ReadSize(func() error {
+		return nil
+	})
+}
+
 type EnumElement struct {
 	Name string
 	Doc  string
@@ -440,7 +456,8 @@ type PackageId__Enum interface {
 	bits.Value
 }
 
-func (*PackageId_Current) isPackageId() {}
+func (*PackageId_Current) isPackageId()  {}
+func (*PackageId__Unknown) isPackageId() {}
 
 func (x *PackageId) Write(e *bits.Encoder) {
 	switch x.PackageId.(type) {
@@ -461,7 +478,7 @@ func (x *PackageId) Read(d *bits.Decoder) error {
 	case 0:
 		x.PackageId = new(PackageId_Current)
 	default:
-		x.PackageId = nil // TODO: &PackageId__Unknown{i}
+		x.PackageId = &PackageId__Unknown{I: i}
 	}
 	return x.PackageId.Read(d)
 }
@@ -474,6 +491,21 @@ func (x *PackageId_Current) Write(e *bits.Encoder) {
 }
 
 func (x *PackageId_Current) Read(d *bits.Decoder) error {
+	return d.ReadSize(func() error {
+		return nil
+	})
+}
+
+type PackageId__Unknown struct {
+	I uint64
+}
+
+func (x *PackageId__Unknown) Write(e *bits.Encoder) {
+	e.WriteSize(func() {
+	})
+}
+
+func (x *PackageId__Unknown) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
 		return nil
 	})
