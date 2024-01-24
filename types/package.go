@@ -24,7 +24,7 @@ type PackageID_Current struct{}
 
 func (*PackageID_Current) isPackageID() {}
 
-func packageFromData(p types.Package, namedTypes map[*NamedType]string) *Package {
+func (l *Loader) packageFromData(p types.Package, namedTypes map[*NamedType]uint64) *Package {
 	pkg := &Package{
 		Name:  p.Name,
 		Doc:   p.Doc,
@@ -34,13 +34,13 @@ func packageFromData(p types.Package, namedTypes map[*NamedType]string) *Package
 		pkg.Types[i] = &TypeName{
 			Name: t.Name,
 			Doc:  t.Doc,
-			Type: typeFromData(t.Type, namedTypes),
+			Type: l.typeFromData(t.Type, namedTypes),
 		}
 	}
 	return pkg
 }
 
-func packageToData(p *Package) types.Package {
+func (l *Loader) packageToData(p *Package) types.Package {
 	pkg := types.Package{
 		Name:  p.Name,
 		Doc:   p.Doc,
@@ -50,7 +50,7 @@ func packageToData(p *Package) types.Package {
 		pkg.Types[i] = types.TypeName{
 			Name: t.Name,
 			Doc:  t.Doc,
-			Type: typeToData(t.Type),
+			Type: l.typeToData(t.Type),
 		}
 	}
 	return pkg

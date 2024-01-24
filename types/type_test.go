@@ -39,7 +39,8 @@ func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
 func newStringType() *StringType { return &StringType{} }
 
 func testType(t *testing.T, src Type) {
-	srctyp := typeToData(src)
+	l := Loader{}
+	srctyp := l.typeToData(src)
 	e := bits.NewEncoder()
 	srctyp.Write(e)
 	var dsttyp types.Type
@@ -51,7 +52,7 @@ func testType(t *testing.T, src Type) {
 	if d.Remaining() > 0 {
 		t.Errorf("%d bits remaining", d.Remaining())
 	}
-	dst := typeFromData(dsttyp, nil)
+	dst := l.typeFromData(dsttyp, nil)
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("Types are not equal:\nsrc = %#v\ndst = %#v", src, dst)
 	}

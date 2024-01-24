@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/gordonklaus/dt/types/internal/types"
 )
 
@@ -19,7 +21,7 @@ func (*MapType) isType()    {}
 func (*EnumType) isType()   {}
 func (*StructType) isType() {}
 
-func typeFromData(t types.Type, namedTypes map[*NamedType]string) Type {
+func (l *Loader) typeFromData(t types.Type, namedTypes map[*NamedType]uint64) Type {
 	switch t := t.Type.(type) {
 	case *types.Type_Bool:
 		return &BoolType{}
@@ -31,26 +33,26 @@ func typeFromData(t types.Type, namedTypes map[*NamedType]string) Type {
 		return &StringType{}
 	case *types.Type_Named:
 		nt := &NamedType{Package: packageIDFromData(t.Package)}
-		namedTypes[nt] = t.Name
+		namedTypes[nt] = t.Index
 		return nt
 	case *types.Type_Option:
-		return &OptionType{Elem: typeFromData(t.Element, namedTypes)}
+		return &OptionType{Elem: l.typeFromData(t.Element, namedTypes)}
 	case *types.Type_Array:
-		return &ArrayType{Elem: typeFromData(t.Element, namedTypes)}
+		return &ArrayType{Elem: l.typeFromData(t.Element, namedTypes)}
 	case *types.Type_Map:
 		return &MapType{
-			Key:   typeFromData(t.Key, namedTypes),
-			Value: typeFromData(t.Value, namedTypes),
+			Key:   l.typeFromData(t.Key, namedTypes),
+			Value: l.typeFromData(t.Value, namedTypes),
 		}
 	case *types.Type_Enum:
-		return enumTypeFromData(t, namedTypes)
+		return l.enumTypeFromData(t, namedTypes)
 	case *types.Type_Struct:
-		return structTypeFromData(t, namedTypes)
+		return l.structTypeFromData(t, namedTypes)
 	}
 	panic("unreached")
 }
 
-func typeToData(t Type) types.Type {
+func (l *Loader) typeToData(t Type) types.Type {
 	switch t := t.(type) {
 	case *BoolType:
 		return types.Type{Type: &types.Type_Bool{}}
@@ -61,23 +63,29 @@ func typeToData(t Type) types.Type {
 	case *StringType:
 		return types.Type{Type: &types.Type_String{}}
 	case *NamedType:
-		return types.Type{Type: &types.Type_Named{
-			Package: packageIDToData(t.Package),
-			Name:    t.TypeName.Name,
-		}}
+		p := l.Packages[t.Package]
+		for i, tn := range p.Types {
+			if tn == t.TypeName {
+				return types.Type{Type: &types.Type_Named{
+					Package: packageIDToData(t.Package),
+					Index:   uint64(i),
+				}}
+			}
+		}
+		panic(fmt.Sprintf("package %s has no type %s", p.Name, t.TypeName.Name))
 	case *OptionType:
-		return types.Type{Type: &types.Type_Option{Element: typeToData(t.Elem)}}
+		return types.Type{Type: &types.Type_Option{Element: l.typeToData(t.Elem)}}
 	case *ArrayType:
-		return types.Type{Type: &types.Type_Array{Element: typeToData(t.Elem)}}
+		return types.Type{Type: &types.Type_Array{Element: l.typeToData(t.Elem)}}
 	case *MapType:
 		return types.Type{Type: &types.Type_Map{
-			Key:   typeToData(t.Key),
-			Value: typeToData(t.Value),
+			Key:   l.typeToData(t.Key),
+			Value: l.typeToData(t.Value),
 		}}
 	case *EnumType:
-		return types.Type{Type: enumTypeToData(t)}
+		return types.Type{Type: l.enumTypeToData(t)}
 	case *StructType:
-		return types.Type{Type: structTypeToData(t)}
+		return types.Type{Type: l.structTypeToData(t)}
 	}
 	panic("unreached")
 }

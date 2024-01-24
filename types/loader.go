@@ -39,9 +39,9 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		return nil, fmt.Errorf("%d bytes remaining after reading package", bb.Len())
 	}
 
-	namedTypes := map[*NamedType]string{}
+	namedTypes := map[*NamedType]uint64{}
 
-	p := packageFromData(pkg, namedTypes)
+	p := l.packageFromData(pkg, namedTypes)
 
 	if err := ValidatePackage(p); err != nil {
 		return nil, err
@@ -49,16 +49,15 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 
 	l.Packages[id] = p
 
-	for nt, name := range namedTypes {
+	for nt, index := range namedTypes {
 		p, err := l.Load(nt.Package)
 		if err != nil {
 			return nil, err
 		}
-		tn := p.Type(name)
-		if tn == nil {
-			return nil, fmt.Errorf("package %s has no type %s", p.Name, name)
+		if index >= uint64(len(p.Types)) {
+			return nil, fmt.Errorf("package %s has no type for index %d", p.Name, index)
 		}
-		nt.TypeName = tn
+		nt.TypeName = p.Types[index]
 	}
 
 	return p, nil
@@ -74,7 +73,7 @@ func (l *Loader) Store(id PackageID) error {
 		return err
 	}
 
-	pkg := packageToData(p)
+	pkg := l.packageToData(p)
 
 	enc := bits.NewEncoder()
 	pkg.Write(enc)
