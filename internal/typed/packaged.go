@@ -21,6 +21,7 @@ type PackageEditor struct {
 	list        layout.List
 	focusedType int
 	ed          *TypeNameEditor
+	first       bool
 }
 
 func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
@@ -34,27 +35,29 @@ func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
 	if len(pkg.Types) == 0 {
 		pkg.Types = []*types.TypeName{{}}
 	}
-	ed.ed = NewTypeNameEditor(pkg.Types[0], loader)
-	ed.ed.Focus()
+	ed.ed = NewTypeNameEditor(ed, pkg.Types[0], loader)
 	return ed
 }
 
 func (ed *PackageEditor) Layout(gtx C) D {
-	for _, e := range ed.Events(gtx, "←|→|↑|↓|(Shift)-[⏎,⌤]|Short-S") {
+	if !ed.first {
+		ed.first = true
+		ed.ed.Focus(gtx)
+	}
+
+	for _, e := range ed.Events(gtx, "→|↑|↓|(Shift)-[⏎,⌤]|Short-S") {
 		switch e.Name {
-		case "←":
-			ed.Focus()
 		case "→":
-			ed.ed.Focus()
+			ed.ed.Focus(gtx)
 		case "↑":
 			if ed.focusedType > 0 {
 				ed.focusedType--
-				ed.ed = NewTypeNameEditor(ed.pkg.Types[ed.focusedType], ed.loader)
+				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
 			}
 		case "↓":
 			if ed.focusedType < len(ed.pkg.Types)-1 {
 				ed.focusedType++
-				ed.ed = NewTypeNameEditor(ed.pkg.Types[ed.focusedType], ed.loader)
+				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
 			}
 		case "⏎", "⌤":
 			n := &types.TypeName{}
@@ -62,8 +65,8 @@ func (ed *PackageEditor) Layout(gtx C) D {
 				ed.focusedType++
 			}
 			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
-			ed.ed = NewTypeNameEditor(n, ed.loader)
-			ed.ed.Focus()
+			ed.ed = NewTypeNameEditor(ed, n, ed.loader)
+			ed.ed.Focus(gtx)
 		case "S":
 			ed.loader.Store(&types.PackageID_Current{})
 		}

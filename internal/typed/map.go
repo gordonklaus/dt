@@ -36,9 +36,9 @@ func (m *MapTypeEditor) Layout(gtx C) D {
 	for _, e := range m.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "→":
-			m.focusValue.Focus()
+			m.focusValue.Focus(gtx)
 		case "←":
-			m.parent.parent.Focus()
+			m.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			m.key.Edit()
 		}
@@ -48,10 +48,10 @@ func (m *MapTypeEditor) Layout(gtx C) D {
 		switch e.Name {
 		case "→":
 			if ed, ok := m.value.ed.(Focuser); ok {
-				ed.Focus()
+				ed.Focus(gtx)
 			}
 		case "←":
-			m.Focus()
+			m.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			m.value.Edit()
 		}

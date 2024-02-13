@@ -9,6 +9,7 @@ import (
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/text"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
 )
@@ -16,7 +17,11 @@ import (
 type C = layout.Context
 type D = layout.Dimensions
 
-var theme = material.NewTheme(gofont.Collection())
+var theme = material.NewTheme()
+
+func init() {
+	theme.Shaper = text.NewShaper(text.NoSystemFonts(), text.WithCollection(gofont.Collection()))
+}
 
 func Edit(loader *types.Loader, pkg *types.Package) {
 	go edit(loader, pkg)
@@ -30,8 +35,8 @@ func edit(loader *types.Loader, pkg *types.Package) {
 	ed := NewPackageEditor(pkg, loader)
 
 	var ops op.Ops
-	for e := range w.Events() {
-		switch e := e.(type) {
+	for {
+		switch e := w.NextEvent().(type) {
 		case system.FrameEvent:
 			ops.Reset()
 			gtx := layout.NewContext(&ops, e)

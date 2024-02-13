@@ -12,15 +12,15 @@ import (
 )
 
 type Focuser interface {
-	Focus()
+	Focus(gtx C)
 }
 
 type KeyFocus struct {
-	requestFocus, focused bool
+	focused bool
 }
 
-func (f *KeyFocus) Focus() {
-	f.requestFocus = true
+func (f *KeyFocus) Focus(gtx C) {
+	key.FocusOp{Tag: f}.Add(gtx.Ops)
 }
 
 func (f *KeyFocus) Focused() bool {
@@ -40,10 +40,6 @@ func (f *KeyFocus) Events(gtx C, keys key.Set) []key.Event {
 		}
 	}
 
-	if f.requestFocus {
-		f.requestFocus = false
-		key.FocusOp{Tag: f}.Add(gtx.Ops)
-	}
 	key.InputOp{
 		Tag:  f,
 		Keys: keys,

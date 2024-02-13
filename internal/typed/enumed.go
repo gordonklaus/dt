@@ -36,23 +36,23 @@ func NewEnumTypeEditor(parent Focuser, typ *types.EnumType, loader *types.Loader
 
 func (e *EnumTypeEditor) Type() types.Type { return e.typ }
 
-func (e *EnumTypeEditor) Focus() {
+func (e *EnumTypeEditor) Focus(gtx C) {
 	if len(e.elems) == 0 {
 		e.insertElem(nil, false)
 	} else {
-		e.elems[0].Focus()
+		e.elems[0].Focus(gtx)
 	}
 }
 
-func (e *EnumTypeEditor) focusNext(el *EnumElemTypeEditor, next bool) {
+func (e *EnumTypeEditor) focusNext(gtx C, el *EnumElemTypeEditor, next bool) {
 	i := slices.Index(e.elems, el) - 1
 	if next {
 		i += 2
 	}
 	if i < 0 {
-		e.parent.Focus()
+		e.parent.Focus(gtx)
 	} else if i < len(e.elems) {
-		e.elems[i].Focus()
+		e.elems[i].Focus(gtx)
 	}
 }
 
@@ -79,7 +79,7 @@ func (e *EnumTypeEditor) swap(el *EnumElemTypeEditor, next bool) {
 	e.elems[i], e.elems[i+1] = e.elems[i+1], e.elems[i]
 }
 
-func (e *EnumTypeEditor) deleteElem(el *EnumElemTypeEditor, back bool) {
+func (e *EnumTypeEditor) deleteElem(gtx C, el *EnumElemTypeEditor, back bool) {
 	i := slices.Index(e.elems, el)
 	e.typ.Elems = slices.Delete(e.typ.Elems, i, i+1)
 	e.elems = slices.Delete(e.elems, i, i+1)
@@ -87,9 +87,9 @@ func (e *EnumTypeEditor) deleteElem(el *EnumElemTypeEditor, back bool) {
 		i--
 	}
 	if i < len(e.elems) {
-		e.elems[i].Focus()
+		e.elems[i].Focus(gtx)
 	} else {
-		e.parent.Focus()
+		e.parent.Focus(gtx)
 	}
 }
 
@@ -169,40 +169,40 @@ func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
 	for _, ev := range e.KeyFocus.Events(gtx, "←|→|(Shift)-[↑,↓]|(Shift)-[⏎,⌤,⌫,⌦]") {
 		switch ev.Name {
 		case "←":
-			e.focusNamed.Focus()
+			e.focusNamed.Focus(gtx)
 		case "→":
-			e.typed.Focus()
+			e.typed.Focus(gtx)
 		case "↑":
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, false)
 			} else {
-				e.parent.focusNext(e, false)
+				e.parent.focusNext(gtx, e, false)
 			}
 		case "↓":
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, true)
 			} else {
-				e.parent.focusNext(e, true)
+				e.parent.focusNext(gtx, e, true)
 			}
 		case "⏎", "⌤":
 			e.parent.insertElem(e, ev.Modifiers == key.ModShift)
 		case "⌫", "⌦":
-			e.parent.deleteElem(e, (ev.Name == "⌦") == (ev.Modifiers == key.ModShift))
+			e.parent.deleteElem(gtx, e, (ev.Name == "⌦") == (ev.Modifiers == key.ModShift))
 		}
 	}
 
 	for _, ev := range e.focusNamed.Events(gtx, "←|→|⏎|⌤|⌫|⌦|⎋") {
 		switch ev.Name {
 		case "→":
-			e.Focus()
+			e.Focus(gtx)
 		case "←":
-			e.parent.focusNext(e, false)
+			e.parent.focusNext(gtx, e, false)
 		case "⏎", "⌤", "⌫", "⌦":
 			e.named.SetCaret(e.named.Len(), e.named.Len())
 			e.named.Focus()
 		case "⎋":
 			e.named.SetText(e.typ.Name)
-			e.Focus()
+			e.Focus(gtx)
 		}
 	}
 
@@ -211,13 +211,13 @@ func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
 		case widget.SubmitEvent:
 			if validName(ev.Text) {
 				e.typ.Name = ev.Text
-				e.Focus()
+				e.Focus(gtx)
 			}
 		}
 	}
 
 	if e.Focused() && e.typ.Name == "" {
-		e.parent.deleteElem(e, true)
+		e.parent.deleteElem(gtx, e, true)
 	}
 
 	indent := unit.Dp(float32(nameWidth-e.nameRec.Dims.Size.X) / gtx.Metric.PxPerDp)

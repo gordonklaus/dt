@@ -33,10 +33,10 @@ func (o *OptionTypeEditor) Layout(gtx C) D {
 		switch e.Name {
 		case "→":
 			if ed, ok := o.elem.ed.(Focuser); ok {
-				ed.Focus()
+				ed.Focus(gtx)
 			}
 		case "←":
-			o.parent.parent.Focus()
+			o.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			o.elem.Edit()
 		}

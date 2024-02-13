@@ -33,10 +33,10 @@ func (a *ArrayTypeEditor) Layout(gtx C) D {
 		switch e.Name {
 		case "→":
 			if ed, ok := a.elem.ed.(Focuser); ok {
-				ed.Focus()
+				ed.Focus(gtx)
 			}
 		case "←":
-			a.parent.parent.Focus()
+			a.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			a.elem.Edit()
 		}

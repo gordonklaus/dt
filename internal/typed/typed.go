@@ -125,7 +125,7 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 func (t *TypeEditor) Edit() { t.showMenu = true }
 
 func (t *TypeEditor) Layout(gtx C) D {
-	if ed := t.itemClicked(); ed != nil {
+	if ed := t.itemClicked(gtx); ed != nil {
 		t.showMenu = false
 		*t.typ = ed.Type()
 		t.ed = ed
@@ -195,13 +195,13 @@ func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
 						t.ed = t.newEditor(it.new())
 						*t.typ = t.ed.Type()
 						if ed, ok := t.ed.(Focuser); ok {
-							ed.Focus()
+							ed.Focus(gtx)
 						} else {
-							t.parent.Focus()
+							t.parent.Focus(gtx)
 						}
 					case "⎋":
 						t.showMenu = false
-						t.parent.Focus()
+						t.parent.Focus(gtx)
 					}
 				}
 			}
@@ -231,9 +231,9 @@ func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
 	)
 }
 
-func (t *TypeEditor) itemClicked() typeEditor {
+func (t *TypeEditor) itemClicked(gtx C) typeEditor {
 	for _, i := range t.items {
-		if i.c.Clicked() {
+		if i.c.Clicked(gtx) {
 			return t.newEditor(i.new())
 		}
 	}

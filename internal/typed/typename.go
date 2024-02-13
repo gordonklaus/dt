@@ -9,18 +9,20 @@ import (
 )
 
 type TypeNameEditor struct {
-	typ   *types.TypeName
-	named editor
-	typed *TypeEditor
+	parent Focuser
+	typ    *types.TypeName
+	named  editor
+	typed  *TypeEditor
 
 	KeyFocus
 	focusTyped KeyFocus
 }
 
-func NewTypeNameEditor(typ *types.TypeName, loader *types.Loader) *TypeNameEditor {
+func NewTypeNameEditor(parent Focuser, typ *types.TypeName, loader *types.Loader) *TypeNameEditor {
 	n := &TypeNameEditor{
-		typ:   typ,
-		named: newEditor(),
+		parent: parent,
+		typ:    typ,
+		named:  newEditor(),
 	}
 	n.typed = NewTypeNameTypeEditor(&n.focusTyped, &typ.Type, loader)
 	n.named.SetText(typ.Name)
@@ -28,17 +30,19 @@ func NewTypeNameEditor(typ *types.TypeName, loader *types.Loader) *TypeNameEdito
 }
 
 func (n *TypeNameEditor) Layout(gtx C) D {
-	for _, e := range n.KeyFocus.Events(gtx, "→|↓|⏎|⌤|⌫|⌦|⎋") {
+	for _, e := range n.KeyFocus.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦|⎋") {
 		switch e.Name {
+		case "←", "↑":
+			n.parent.Focus(gtx)
 		case "→", "↓":
-			n.focusTyped.Focus()
+			n.focusTyped.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			n.named.SetCaret(n.named.Len(), n.named.Len())
 			n.named.Focus()
 		case "⎋":
 			if n.named.Focused() {
 				n.named.SetText(n.typ.Name)
-				n.Focus()
+				n.Focus(gtx)
 			}
 		}
 	}
@@ -46,9 +50,9 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 	for _, e := range n.focusTyped.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
 		switch e.Name {
 		case "←", "↑":
-			n.Focus()
+			n.Focus(gtx)
 		case "→", "↓":
-			n.typed.ed.(Focuser).Focus()
+			n.typed.ed.(Focuser).Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			n.typed.Edit()
 		}
@@ -59,7 +63,7 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		case widget.SubmitEvent:
 			if validName(e.Text) {
 				n.typ.Name = e.Text
-				n.Focus()
+				n.Focus(gtx)
 			}
 		}
 	}
