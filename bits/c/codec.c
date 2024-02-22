@@ -282,7 +282,7 @@ dt_error dt_write_bytes(dt_encoder *e, dt_bytes x) {
 		return err;
 	}
 	while (x.len > 7) {
-		*ex |= *(uint64_t*)x.data << ei;
+		*ex |= ((*(uint64_t*)x.data) & (((uint64_t)1<<56) - 1)) << ei;
 		e->n += 56;
 		x.data += 7;
 		x.len -= 7;

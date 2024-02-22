@@ -267,7 +267,7 @@ func (e *Encoder) WriteBytes(x []byte) {
 	e.WriteVarUint(uint64(len(x)))
 	e.grow(len(x))
 	for len(x) >= 7 {
-		*e.x() |= *(*uint64)(unsafe.Pointer(&x[0])) << e.i()
+		*e.x() |= (*(*uint64)(unsafe.Pointer(&x[0])) & (1<<56 - 1)) << e.i()
 		e.n += 56
 		x = x[7:]
 	}
