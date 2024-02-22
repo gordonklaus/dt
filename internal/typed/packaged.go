@@ -45,19 +45,27 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		ed.ed.Focus(gtx)
 	}
 
-	for _, e := range ed.Events(gtx, "→|↑|↓|(Shift)-[⏎,⌤]|Short-S") {
+	for _, e := range ed.Events(gtx, "→|(Shift)-[↑,↓]|(Shift)-[⏎,⌤,⌫,⌦]|Short-S") {
 		switch e.Name {
 		case "→":
 			ed.ed.Focus(gtx)
 		case "↑":
-			if ed.focusedType > 0 {
+			if ed.focusedType > 0 && ed.Focused() {
 				ed.focusedType--
-				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+				if e.Modifiers == key.ModShift {
+					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType+1] = ed.pkg.Types[ed.focusedType+1], ed.pkg.Types[ed.focusedType]
+				} else {
+					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+				}
 			}
 		case "↓":
-			if ed.focusedType < len(ed.pkg.Types)-1 {
+			if ed.focusedType < len(ed.pkg.Types)-1 && ed.Focused() {
 				ed.focusedType++
-				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+				if e.Modifiers == key.ModShift {
+					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType-1] = ed.pkg.Types[ed.focusedType-1], ed.pkg.Types[ed.focusedType]
+				} else {
+					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+				}
 			}
 		case "⏎", "⌤":
 			n := &types.TypeName{}
@@ -67,6 +75,18 @@ func (ed *PackageEditor) Layout(gtx C) D {
 			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
 			ed.ed = NewTypeNameEditor(ed, n, ed.loader)
 			ed.ed.Focus(gtx)
+		case "⌫", "⌦":
+			if len(ed.pkg.Types) == 1 {
+				ed.pkg.Types = []*types.TypeName{{}}
+				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[0], ed.loader)
+				ed.ed.Focus(gtx)
+				break
+			}
+			ed.pkg.Types = slices.Delete(ed.pkg.Types, ed.focusedType, ed.focusedType+1)
+			if e.Name == "⌫" && e.Modifiers == 0 && ed.focusedType > 0 || ed.focusedType == len(ed.pkg.Types) {
+				ed.focusedType--
+			}
+			ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
 		case "S":
 			ed.loader.Store(&types.PackageID_Current{})
 		}

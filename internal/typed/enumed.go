@@ -187,7 +187,7 @@ func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
 		case "⏎", "⌤":
 			e.parent.insertElem(e, ev.Modifiers == key.ModShift)
 		case "⌫", "⌦":
-			e.parent.deleteElem(gtx, e, (ev.Name == "⌦") == (ev.Modifiers == key.ModShift))
+			e.parent.deleteElem(gtx, e, ev.Name == "⌫" && ev.Modifiers == 0)
 		}
 	}
 

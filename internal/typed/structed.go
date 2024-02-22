@@ -193,7 +193,7 @@ func (f *StructFieldTypeEditor) Layout(gtx C, nameWidth int) D {
 		case "⏎", "⌤":
 			f.parent.insertField(f, e.Modifiers == key.ModShift)
 		case "⌫", "⌦":
-			f.parent.deleteField(gtx, f, (e.Name == "⌦") == (e.Modifiers == key.ModShift))
+			f.parent.deleteField(gtx, f, e.Name == "⌫" && e.Modifiers == 0)
 		}
 	}
 
