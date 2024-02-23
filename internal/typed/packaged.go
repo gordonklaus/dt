@@ -68,7 +68,15 @@ func (ed *PackageEditor) Layout(gtx C) D {
 				}
 			}
 		case "⏎", "⌤":
-			n := &types.TypeName{}
+			var id uint64
+		restart:
+			for _, nt := range ed.pkg.Types {
+				if nt.ID == id {
+					id++
+					goto restart
+				}
+			}
+			n := &types.TypeName{ID: id}
 			if e.Modifiers != key.ModShift && len(ed.pkg.Types) > 0 {
 				ed.focusedType++
 			}
@@ -76,6 +84,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 			ed.ed = NewTypeNameEditor(ed, n, ed.loader)
 			ed.ed.Focus(gtx)
 		case "⌫", "⌦":
+			// TODO: Check if this type is referenced elsewhere and, if so, ask the user if they want to delete those references.
 			if len(ed.pkg.Types) == 1 {
 				ed.pkg.Types = []*types.TypeName{{}}
 				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[0], ed.loader)

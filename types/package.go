@@ -9,9 +9,9 @@ type Package struct {
 	Types     []*TypeName
 }
 
-func (p *Package) Type(name string) *TypeName {
+func (p *Package) Type(id uint64) *TypeName {
 	for _, t := range p.Types {
-		if t.Name == name {
+		if t.ID == id {
 			return t
 		}
 	}
@@ -24,7 +24,7 @@ type PackageID_Current struct{}
 
 func (*PackageID_Current) isPackageID() {}
 
-func (l *Loader) packageFromData(p types.Package, namedTypes map[*NamedType]uint64) *Package {
+func (l *Loader) packageFromData(p types.Package, namedIDs map[*NamedType]uint64) *Package {
 	pkg := &Package{
 		Name:  p.Name,
 		Doc:   p.Doc,
@@ -32,9 +32,10 @@ func (l *Loader) packageFromData(p types.Package, namedTypes map[*NamedType]uint
 	}
 	for i, t := range p.Types {
 		pkg.Types[i] = &TypeName{
+			ID:   t.ID,
 			Name: t.Name,
 			Doc:  t.Doc,
-			Type: l.typeFromData(t.Type, namedTypes),
+			Type: l.typeFromData(t.Type, namedIDs),
 		}
 	}
 	return pkg
@@ -48,6 +49,7 @@ func (l *Loader) packageToData(p *Package) types.Package {
 	}
 	for i, t := range p.Types {
 		pkg.Types[i] = types.TypeName{
+			ID:   t.ID,
 			Name: t.Name,
 			Doc:  t.Doc,
 			Type: l.typeToData(t.Type),

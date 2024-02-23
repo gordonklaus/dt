@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/gordonklaus/dt/types/internal/types"
 )
 
@@ -21,7 +19,7 @@ func (*MapType) isType()    {}
 func (*EnumType) isType()   {}
 func (*StructType) isType() {}
 
-func (l *Loader) typeFromData(t types.Type, namedTypes map[*NamedType]uint64) Type {
+func (l *Loader) typeFromData(t types.Type, namedIDs map[*NamedType]uint64) Type {
 	switch t := t.Type.(type) {
 	case *types.Type_Bool:
 		return &BoolType{}
@@ -33,21 +31,21 @@ func (l *Loader) typeFromData(t types.Type, namedTypes map[*NamedType]uint64) Ty
 		return &StringType{}
 	case *types.Type_Named:
 		nt := &NamedType{Package: packageIDFromData(t.Package)}
-		namedTypes[nt] = t.Index
+		namedIDs[nt] = t.ID
 		return nt
 	case *types.Type_Option:
-		return &OptionType{Elem: l.typeFromData(t.Element, namedTypes)}
+		return &OptionType{Elem: l.typeFromData(t.Element, namedIDs)}
 	case *types.Type_Array:
-		return &ArrayType{Elem: l.typeFromData(t.Element, namedTypes)}
+		return &ArrayType{Elem: l.typeFromData(t.Element, namedIDs)}
 	case *types.Type_Map:
 		return &MapType{
-			Key:   l.typeFromData(t.Key, namedTypes),
-			Value: l.typeFromData(t.Value, namedTypes),
+			Key:   l.typeFromData(t.Key, namedIDs),
+			Value: l.typeFromData(t.Value, namedIDs),
 		}
 	case *types.Type_Enum:
-		return l.enumTypeFromData(t, namedTypes)
+		return l.enumTypeFromData(t, namedIDs)
 	case *types.Type_Struct:
-		return l.structTypeFromData(t, namedTypes)
+		return l.structTypeFromData(t, namedIDs)
 	}
 	panic("unreached")
 }
@@ -63,16 +61,10 @@ func (l *Loader) typeToData(t Type) types.Type {
 	case *StringType:
 		return types.Type{Type: &types.Type_String{}}
 	case *NamedType:
-		p := l.Packages[t.Package]
-		for i, tn := range p.Types {
-			if tn == t.TypeName {
-				return types.Type{Type: &types.Type_Named{
-					Package: packageIDToData(t.Package),
-					Index:   uint64(i),
-				}}
-			}
-		}
-		panic(fmt.Sprintf("package %s has no type %s", p.Name, t.TypeName.Name))
+		return types.Type{Type: &types.Type_Named{
+			Package: packageIDToData(t.Package),
+			ID:      t.TypeName.ID,
+		}}
 	case *OptionType:
 		return types.Type{Type: &types.Type_Option{Element: l.typeToData(t.Elem)}}
 	case *ArrayType:

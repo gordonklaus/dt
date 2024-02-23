@@ -39,25 +39,21 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		return nil, fmt.Errorf("%d bytes remaining after reading package", bb.Len())
 	}
 
-	namedTypes := map[*NamedType]uint64{}
-
-	p := l.packageFromData(pkg, namedTypes)
-
+	namedIDs := map[*NamedType]uint64{}
+	p := l.packageFromData(pkg, namedIDs)
 	if err := ValidatePackage(p); err != nil {
 		return nil, err
 	}
-
 	l.Packages[id] = p
-
-	for nt, index := range namedTypes {
+	for nt, id := range namedIDs {
 		p, err := l.Load(nt.Package)
 		if err != nil {
 			return nil, err
 		}
-		if index >= uint64(len(p.Types)) {
-			return nil, fmt.Errorf("package %s has no type for index %d", p.Name, index)
+		nt.TypeName = p.Type(id)
+		if nt.TypeName == nil {
+			return nil, fmt.Errorf("package %s has no type with ID %d", p.Name, id)
 		}
-		nt.TypeName = p.Types[index]
 	}
 
 	return p, nil

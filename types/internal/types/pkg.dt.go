@@ -309,13 +309,13 @@ func (x *Type_String) Read(d *bits.Decoder) error {
 
 type Type_Named struct {
 	Package PackageId
-	Index   uint64
+	ID      uint64
 }
 
 func (x *Type_Named) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
 		(x.Package).Write(e)
-		e.WriteVarUint(x.Index)
+		e.WriteVarUint(x.ID)
 	})
 }
 
@@ -330,7 +330,7 @@ func (x *Type_Named) Read(d *bits.Decoder) error {
 		if d.Remaining() == 0 {
 			return nil
 		}
-		if err := d.ReadVarUint(&x.Index); err != nil {
+		if err := d.ReadVarUint(&x.ID); err != nil {
 			return err
 		}
 		return nil
@@ -479,6 +479,7 @@ func (x *Package) Read(d *bits.Decoder) error {
 }
 
 type TypeName struct {
+	ID   uint64
 	Name string
 	Doc  string
 	Type Type
@@ -486,6 +487,7 @@ type TypeName struct {
 
 func (x *TypeName) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
+		e.WriteVarUint(x.ID)
 		e.WriteString(x.Name)
 		e.WriteString(x.Doc)
 		(x.Type).Write(e)
@@ -494,6 +496,12 @@ func (x *TypeName) Write(e *bits.Encoder) {
 
 func (x *TypeName) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
+		if err := d.ReadVarUint(&x.ID); err != nil {
+			return err
+		}
 		if d.Remaining() == 0 {
 			return nil
 		}

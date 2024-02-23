@@ -11,13 +11,13 @@ type EnumElemType struct {
 	Type      Type // *StructType
 }
 
-func (l *Loader) enumTypeFromData(t *types.Type_Enum, namedTypes map[*NamedType]uint64) *EnumType {
+func (l *Loader) enumTypeFromData(t *types.Type_Enum, namedIDs map[*NamedType]uint64) *EnumType {
 	typ := &EnumType{Elems: make([]*EnumElemType, len(t.Elements))}
 	for i, e := range t.Elements {
 		typ.Elems[i] = &EnumElemType{
 			Name: e.Name,
 			Doc:  e.Doc,
-			Type: l.typeFromData(e.Type, namedTypes),
+			Type: l.typeFromData(e.Type, namedIDs),
 		}
 	}
 	return typ

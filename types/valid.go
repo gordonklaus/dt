@@ -7,10 +7,15 @@ func ValidatePackage(p *Package) error {
 		return err
 	}
 	names := map[string]bool{}
+	ids := map[uint64]bool{}
 	for _, t := range p.Types {
 		if err := ValidateName(t.Name, names); err != nil {
 			return err
 		}
+		if ids[t.ID] {
+			return fmt.Errorf("duplicate id %d", t.ID)
+		}
+		ids[t.ID] = true
 		switch t.Type.(type) {
 		case *EnumType, *StructType:
 		default:
