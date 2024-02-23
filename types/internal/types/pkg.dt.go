@@ -308,7 +308,7 @@ func (x *Type_String) Read(d *bits.Decoder) error {
 }
 
 type Type_Named struct {
-	Package PackageId
+	Package PackageID
 	ID      uint64
 }
 
@@ -524,62 +524,62 @@ func (x *TypeName) Read(d *bits.Decoder) error {
 	})
 }
 
-type PackageId struct{ PackageId PackageId__Enum }
-type PackageId__Enum interface {
-	isPackageId()
+type PackageID struct{ PackageID PackageID__Enum }
+type PackageID__Enum interface {
+	isPackageID()
 	bits.Value
 }
 
-func (*PackageId_Current) isPackageId()  {}
-func (*PackageId__Unknown) isPackageId() {}
+func (*PackageID_Current) isPackageID()  {}
+func (*PackageID__Unknown) isPackageID() {}
 
-func (x *PackageId) Write(e *bits.Encoder) {
-	switch x.PackageId.(type) {
-	case *PackageId_Current:
+func (x *PackageID) Write(e *bits.Encoder) {
+	switch x.PackageID.(type) {
+	case *PackageID_Current:
 		e.WriteVarUint_4bit(0)
 	default:
-		panic(fmt.Sprintf("invalid PackageId enum value %T", x))
+		panic(fmt.Sprintf("invalid PackageID enum value %T", x))
 	}
-	x.PackageId.Write(e)
+	x.PackageID.Write(e)
 }
 
-func (x *PackageId) Read(d *bits.Decoder) error {
+func (x *PackageID) Read(d *bits.Decoder) error {
 	var i uint64
 	if err := d.ReadVarUint_4bit(&i); err != nil {
 		return err
 	}
 	switch i {
 	case 0:
-		x.PackageId = new(PackageId_Current)
+		x.PackageID = new(PackageID_Current)
 	default:
-		x.PackageId = &PackageId__Unknown{I: i}
+		x.PackageID = &PackageID__Unknown{I: i}
 	}
-	return x.PackageId.Read(d)
+	return x.PackageID.Read(d)
 }
 
-type PackageId_Current struct{}
+type PackageID_Current struct{}
 
-func (x *PackageId_Current) Write(e *bits.Encoder) {
+func (x *PackageID_Current) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
 	})
 }
 
-func (x *PackageId_Current) Read(d *bits.Decoder) error {
+func (x *PackageID_Current) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
 		return nil
 	})
 }
 
-type PackageId__Unknown struct {
+type PackageID__Unknown struct {
 	I uint64
 }
 
-func (x *PackageId__Unknown) Write(e *bits.Encoder) {
+func (x *PackageID__Unknown) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
 	})
 }
 
-func (x *PackageId__Unknown) Read(d *bits.Decoder) error {
+func (x *PackageID__Unknown) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
 		return nil
 	})

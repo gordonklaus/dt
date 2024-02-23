@@ -58,18 +58,18 @@ func (l *Loader) packageToData(p *Package) types.Package {
 	return pkg
 }
 
-func packageIDFromData(p types.PackageId) PackageID {
-	switch p.PackageId.(type) {
-	case *types.PackageId_Current:
+func packageIDFromData(p types.PackageID) PackageID {
+	switch p.PackageID.(type) {
+	case *types.PackageID_Current:
 		return &PackageID_Current{}
 	}
 	panic("unreached")
 }
 
-func packageIDToData(p PackageID) types.PackageId {
+func packageIDToData(p PackageID) types.PackageID {
 	switch p.(type) {
 	case *PackageID_Current:
-		return types.PackageId{PackageId: &types.PackageId_Current{}}
+		return types.PackageID{PackageID: &types.PackageID_Current{}}
 	}
 	panic("unreached")
 }
