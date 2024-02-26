@@ -37,15 +37,17 @@ func edit(loader *types.Loader, pkg *types.Package) {
 	var ops op.Ops
 	for {
 		switch e := w.NextEvent().(type) {
-		case system.FrameEvent:
+		case app.FrameEvent:
 			ops.Reset()
-			gtx := layout.NewContext(&ops, e)
+			gtx := app.NewContext(&ops, e)
 
-			key.InputOp{Tag: w, Keys: "(Shift)-Tab"}.Add(gtx.Ops) // Disable tab navigation globally.
+			// Disable tab navigation globally.
+			for ok := true; ok; _, ok = gtx.Event(key.Filter{Name: key.NameTab, Optional: key.ModShift}) {
+			}
 
 			layout.Center.Layout(gtx, ed.Layout)
 			e.Frame(&ops)
-		case system.DestroyEvent:
+		case app.DestroyEvent:
 			if e.Err != nil {
 				fmt.Println(e.Err)
 			}

@@ -3,7 +3,7 @@ module github.com/gordonklaus/dt
 go 1.21
 
 require (
-	gioui.org v0.4.2
+	gioui.org v0.5.0
 	golang.org/x/exp v0.0.0-20230419192730-864b3d6c5c2c
 )
 

@@ -42,15 +42,15 @@ func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
 func (ed *PackageEditor) Layout(gtx C) D {
 	if !ed.first {
 		ed.first = true
-		ed.ed.Focus(gtx)
+		ed.Focus(gtx)
 	}
 
-	for _, e := range ed.Events(gtx, "→|(Shift)-[↑,↓]|(Shift)-[⏎,⌤,⌫,⌦]|Short-S") {
+	for _, e := range ed.Events(gtx) {
 		switch e.Name {
 		case "→":
 			ed.ed.Focus(gtx)
 		case "↑":
-			if ed.focusedType > 0 && ed.Focused() {
+			if ed.focusedType > 0 && ed.Focused(gtx) {
 				ed.focusedType--
 				if e.Modifiers == key.ModShift {
 					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType+1] = ed.pkg.Types[ed.focusedType+1], ed.pkg.Types[ed.focusedType]
@@ -59,7 +59,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 				}
 			}
 		case "↓":
-			if ed.focusedType < len(ed.pkg.Types)-1 && ed.Focused() {
+			if ed.focusedType < len(ed.pkg.Types)-1 && ed.Focused(gtx) {
 				ed.focusedType++
 				if e.Modifiers == key.ModShift {
 					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType-1] = ed.pkg.Types[ed.focusedType-1], ed.pkg.Types[ed.focusedType]
@@ -104,10 +104,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 	listRec := Record(gtx, func(gtx C) D {
 		return ed.list.Layout(gtx, len(ed.pkg.Types), ed.layoutTypeName)
 	})
-	var edRec Recording
-	if ed.ed != nil {
-		edRec = Record(gtx, ed.ed.Layout)
-	}
+	edRec := Record(gtx, ed.ed.Layout)
 
 	w2 := gtx.Metric.PxToDp(gtx.Constraints.Max.X / 2)
 	l2 := gtx.Metric.PxToDp(listRec.Dims.Size.X / 2)
@@ -124,7 +121,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 func (ed *PackageEditor) layoutTypeName(gtx C, i int) D {
 	return layout.Stack{}.Layout(gtx,
 		layout.Expanded(func(gtx C) D {
-			if i != ed.focusedType || !ed.Focused() {
+			if i != ed.focusedType || !ed.Focused(gtx) {
 				return D{}
 			}
 			paint.FillShape(gtx.Ops, color.NRGBA{A: 64},

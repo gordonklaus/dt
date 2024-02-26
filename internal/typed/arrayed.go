@@ -20,16 +20,13 @@ func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, loader *types.
 		typ:    typ,
 	}
 	a.elem = NewTypeEditor(a, &typ.Elem, loader)
-	if typ.Elem == nil {
-		a.elem.Edit()
-	}
 	return a
 }
 
 func (a *ArrayTypeEditor) Type() types.Type { return a.typ }
 
 func (a *ArrayTypeEditor) Layout(gtx C) D {
-	for _, e := range a.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
+	for _, e := range a.KeyFocus.Events(gtx) {
 		switch e.Name {
 		case "→":
 			if ed, ok := a.elem.ed.(Focuser); ok {
@@ -38,14 +35,18 @@ func (a *ArrayTypeEditor) Layout(gtx C) D {
 		case "←":
 			a.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
-			a.elem.Edit()
+			a.elem.Edit(gtx)
 		}
 	}
 
-	if a.Focused() && a.typ.Elem == nil {
-		*a.parent.typ = nil
-		a.parent.ed = nil
-		a.parent.Edit()
+	if a.typ.Elem == nil {
+		if a.Focused(gtx) {
+			*a.parent.typ = nil
+			a.parent.ed = nil
+			a.parent.Edit(gtx)
+		} else {
+			a.elem.Edit(gtx)
+		}
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

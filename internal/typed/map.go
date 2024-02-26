@@ -22,29 +22,24 @@ func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, loader *types.Load
 	}
 	m.key = NewMapKeyTypeEditor(m, &typ.Key, loader)
 	m.value = NewTypeEditor(&m.focusValue, &typ.Value, loader)
-	if typ.Key == nil {
-		m.key.Edit()
-	} else if typ.Value == nil {
-		m.value.Edit()
-	}
 	return m
 }
 
 func (m *MapTypeEditor) Type() types.Type { return m.typ }
 
 func (m *MapTypeEditor) Layout(gtx C) D {
-	for _, e := range m.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
+	for _, e := range m.KeyFocus.Events(gtx) {
 		switch e.Name {
 		case "→":
 			m.focusValue.Focus(gtx)
 		case "←":
 			m.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
-			m.key.Edit()
+			m.key.Edit(gtx)
 		}
 	}
 
-	for _, e := range m.focusValue.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
+	for _, e := range m.focusValue.Events(gtx) {
 		switch e.Name {
 		case "→":
 			if ed, ok := m.value.ed.(Focuser); ok {
@@ -53,24 +48,26 @@ func (m *MapTypeEditor) Layout(gtx C) D {
 		case "←":
 			m.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
-			m.value.Edit()
+			m.value.Edit(gtx)
 		}
 	}
 
-	if m.Focused() {
-		if m.typ.Key == nil {
+	if m.typ.Key == nil {
+		if m.Focused(gtx) {
 			*m.parent.typ = nil
 			m.parent.ed = nil
-			m.parent.Edit()
-		} else if m.typ.Value == nil {
-			m.value.Edit()
+			m.parent.Edit(gtx)
+		} else {
+			m.key.Edit(gtx)
 		}
+	} else if m.typ.Value == nil && m.Focused(gtx) {
+		m.value.Edit(gtx)
 	}
 
-	if m.focusValue.Focused() && m.typ.Value == nil {
+	if m.focusValue.Focused(gtx) && m.typ.Value == nil {
 		*m.key.typ = nil
 		m.key.ed = nil
-		m.key.Edit()
+		m.key.Edit(gtx)
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

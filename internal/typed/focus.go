@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -16,23 +17,29 @@ type Focuser interface {
 }
 
 type KeyFocus struct {
-	focused bool
+	_ int // because pointers to empty structs may not be unique
 }
 
 func (f *KeyFocus) Focus(gtx C) {
-	key.FocusOp{Tag: f}.Add(gtx.Ops)
+	gtx.Execute(key.FocusCmd{Tag: f})
 }
 
-func (f *KeyFocus) Focused() bool {
-	return f.focused
+func (f *KeyFocus) Focused(gtx C) bool {
+	return gtx.Focused(f)
 }
 
-func (f *KeyFocus) Events(gtx C, keys key.Set) []key.Event {
+func (f *KeyFocus) Events(gtx C) []key.Event {
 	events := []key.Event{}
-	for _, e := range gtx.Events(f) {
+	for {
+		e, ok := gtx.Event(
+			key.FocusFilter{Target: f},
+			key.Filter{Focus: f, Optional: key.ModCommand | key.ModShift | key.ModAlt | key.ModSuper},
+		)
+		if !ok {
+			break
+		}
 		switch e := e.(type) {
 		case key.FocusEvent:
-			f.focused = e.Focus
 		case key.Event:
 			if e.State == key.Press {
 				events = append(events, e)
@@ -40,10 +47,7 @@ func (f *KeyFocus) Events(gtx C, keys key.Set) []key.Event {
 		}
 	}
 
-	key.InputOp{
-		Tag:  f,
-		Keys: keys,
-	}.Add(gtx.Ops)
+	event.Op(gtx.Ops, f)
 
 	return events
 }
@@ -51,7 +55,7 @@ func (f *KeyFocus) Events(gtx C, keys key.Set) []key.Event {
 func (f *KeyFocus) Layout(gtx C, w layout.Widget) D {
 	return layout.Stack{}.Layout(gtx,
 		layout.Expanded(func(gtx C) D {
-			if f.focused {
+			if f.Focused(gtx) {
 				m := gtx.Dp(4)
 				defer op.Offset(image.Pt(-m, -m)).Push(gtx.Ops).Pop()
 				paint.FillShape(gtx.Ops, color.NRGBA{A: 64},

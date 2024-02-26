@@ -20,16 +20,13 @@ func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *type
 		typ:    typ,
 	}
 	o.elem = NewTypeEditor(o, &typ.Elem, loader)
-	if typ.Elem == nil {
-		o.elem.Edit()
-	}
 	return o
 }
 
 func (o *OptionTypeEditor) Type() types.Type { return o.typ }
 
 func (o *OptionTypeEditor) Layout(gtx C) D {
-	for _, e := range o.KeyFocus.Events(gtx, "←|→|⏎|⌤|⌫|⌦") {
+	for _, e := range o.KeyFocus.Events(gtx) {
 		switch e.Name {
 		case "→":
 			if ed, ok := o.elem.ed.(Focuser); ok {
@@ -38,14 +35,18 @@ func (o *OptionTypeEditor) Layout(gtx C) D {
 		case "←":
 			o.parent.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
-			o.elem.Edit()
+			o.elem.Edit(gtx)
 		}
 	}
 
-	if o.Focused() && o.typ.Elem == nil {
-		*o.parent.typ = nil
-		o.parent.ed = nil
-		o.parent.Edit()
+	if o.typ.Elem == nil {
+		if o.Focused(gtx) {
+			*o.parent.typ = nil
+			o.parent.ed = nil
+			o.parent.Edit(gtx)
+		} else {
+			o.elem.Edit(gtx)
+		}
 	}
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,

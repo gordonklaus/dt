@@ -30,35 +30,36 @@ func NewTypeNameEditor(parent Focuser, typ *types.TypeName, loader *types.Loader
 }
 
 func (n *TypeNameEditor) Layout(gtx C) D {
-	for _, e := range n.KeyFocus.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦|⎋") {
+	for _, e := range n.KeyFocus.Events(gtx) {
 		switch e.Name {
 		case "←", "↑":
 			n.parent.Focus(gtx)
 		case "→", "↓":
 			n.focusTyped.Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
+		case "⏎", "⌤":
 			n.named.SetCaret(n.named.Len(), n.named.Len())
-			n.named.Focus()
-		case "⎋":
-			if n.named.Focused() {
+			n.named.Focus(gtx)
+		case "⌫", "⌦":
+			n.named.SetCaret(n.named.Len(), 0)
+			n.named.Focus(gtx)
+		}
+	}
+
+	for {
+		e, ok := gtx.Event(key.Filter{Focus: &n.named.Editor, Name: "⎋"})
+		if !ok {
+			break
+		}
+		switch e := e.(type) {
+		case key.Event:
+			if e.Name == "⎋" {
 				n.named.SetText(n.typ.Name)
 				n.Focus(gtx)
 			}
 		}
 	}
 
-	for _, e := range n.focusTyped.Events(gtx, "←|→|↑|↓|⏎|⌤|⌫|⌦") {
-		switch e.Name {
-		case "←", "↑":
-			n.Focus(gtx)
-		case "→", "↓":
-			n.typed.ed.(Focuser).Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
-			n.typed.Edit()
-		}
-	}
-
-	for _, e := range n.named.Events() {
+	for e, ok := n.named.Update(gtx); ok; e, ok = n.named.Update(gtx) {
 		switch e := e.(type) {
 		case widget.SubmitEvent:
 			if validName(e.Text) {
@@ -68,10 +69,21 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		}
 	}
 
+	for _, e := range n.focusTyped.Events(gtx) {
+		switch e.Name {
+		case "←", "↑":
+			n.Focus(gtx)
+		case "→", "↓":
+			n.typed.ed.(Focuser).Focus(gtx)
+		case "⏎", "⌤", "⌫", "⌦":
+			n.typed.Edit(gtx)
+		}
+	}
+
 	if n.typ.Name == "" {
-		n.named.Focus()
+		n.named.Focus(gtx)
 	} else if n.typ.Type == nil {
-		n.typed.Edit()
+		n.typed.Edit(gtx)
 	}
 
 	axis := layout.Vertical
@@ -105,13 +117,11 @@ func newEditor() editor {
 	}
 }
 
+func (ed *editor) Focus(gtx C) {
+	gtx.Execute(key.FocusCmd{Tag: &ed.Editor})
+}
+
 func (ed *editor) Layout(gtx C) D {
-	if ed.Focused() {
-		key.InputOp{
-			Tag:  ed,
-			Keys: "←|→|↑|↓",
-		}.Add(gtx.Ops)
-	}
 	return material.Editor(theme, &ed.Editor, "").Layout(gtx)
 }
 

@@ -2,7 +2,6 @@ package typed
 
 import (
 	"image"
-	"image/color"
 
 	"gioui.org/font"
 	"gioui.org/io/key"
@@ -10,7 +9,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
 )
@@ -20,7 +18,7 @@ type TypeEditor struct {
 	typ    *types.Type
 	loader *types.Loader
 
-	showMenu    bool
+	focusMenu   KeyFocus
 	menu        layout.List
 	items       []*typeMenuItem
 	focusedItem int
@@ -29,7 +27,6 @@ type TypeEditor struct {
 }
 
 type typeMenuItem struct {
-	c   widget.Clickable
 	txt string
 	new func() types.Type
 }
@@ -122,15 +119,12 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	panic("unreached")
 }
 
-func (t *TypeEditor) Edit() { t.showMenu = true }
+func (t *TypeEditor) Edit(gtx C) {
+	t.focusMenu.Focus(gtx)
+}
 
 func (t *TypeEditor) Layout(gtx C) D {
-	if ed := t.itemClicked(gtx); ed != nil {
-		t.showMenu = false
-		*t.typ = ed.Type()
-		t.ed = ed
-		op.InvalidateOp{}.Add(gtx.Ops)
-	}
+	t.updateMenu(gtx)
 
 	return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 		layout.Stacked(func(gtx C) D {
@@ -141,101 +135,71 @@ func (t *TypeEditor) Layout(gtx C) D {
 			lbl.Font.Style = font.Italic
 			return lbl.Layout(gtx)
 		}),
-		layout.Stacked(func(gtx C) D {
-			if t.showMenu {
-				t.layoutMenu(gtx)
-			}
-			return D{}
-		}),
+		layout.Stacked(t.layoutMenu),
 	)
 }
 
-func (t *TypeEditor) layoutMenu(gtx C) {
-	m := op.Record(gtx.Ops)
-	layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx C) D {
-			r := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4))
-			paint.FillShape(gtx.Ops, theme.Bg, r.Op(gtx.Ops))
-			paint.FillShape(gtx.Ops, theme.Fg,
-				clip.Stroke{
-					Path:  r.Path(gtx.Ops),
-					Width: 1,
-				}.Op(),
-			)
-			return D{Size: gtx.Constraints.Min}
-		}),
-		layout.Stacked(func(gtx C) D {
-			return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
-				return t.menu.Layout(gtx, len(t.items), t.layoutMenuItem)
-			})
-		}),
-	)
-	op.Defer(gtx.Ops, m.Stop())
+func (t *TypeEditor) updateMenu(gtx C) {
+	for _, e := range t.focusMenu.Events(gtx) {
+		if e.State == key.Press {
+			switch e.Name {
+			case "↑":
+				if t.focusedItem > 0 {
+					t.focusedItem--
+				}
+			case "↓":
+				if t.focusedItem < len(t.items)-1 {
+					t.focusedItem++
+				}
+			case "⏎", "⌤":
+				t.ed = t.newEditor(t.items[t.focusedItem].new())
+				*t.typ = t.ed.Type()
+				if ed, ok := t.ed.(Focuser); ok {
+					ed.Focus(gtx)
+				} else {
+					t.parent.Focus(gtx)
+				}
+			case "⎋":
+				t.parent.Focus(gtx)
+			}
+		}
+	}
+}
+
+func (t *TypeEditor) layoutMenu(gtx C) D {
+	if t.focusMenu.Focused(gtx) {
+		m := op.Record(gtx.Ops)
+		layout.Stack{}.Layout(gtx,
+			layout.Expanded(func(gtx C) D {
+				r := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4))
+				paint.FillShape(gtx.Ops, theme.Bg, r.Op(gtx.Ops))
+				paint.FillShape(gtx.Ops, theme.Fg,
+					clip.Stroke{
+						Path:  r.Path(gtx.Ops),
+						Width: 1,
+					}.Op(),
+				)
+				return D{Size: gtx.Constraints.Min}
+			}),
+			layout.Stacked(func(gtx C) D {
+				return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
+					return t.menu.Layout(gtx, len(t.items), func(gtx C, i int) D {
+						return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
+							return t.layoutMenuItem(gtx, i)
+						})
+					})
+				})
+			}),
+		)
+		op.Defer(gtx.Ops, m.Stop())
+	}
+	return D{}
 }
 
 func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
-	it := t.items[i]
-
+	w := material.Body1(theme, t.items[i].txt).Layout
 	if i == t.focusedItem {
-		for _, e := range gtx.Events(t) {
-			switch e := e.(type) {
-			case key.Event:
-				if e.State == key.Press {
-					switch e.Name {
-					case "↑":
-						if t.focusedItem > 0 {
-							t.focusedItem--
-						}
-					case "↓":
-						if t.focusedItem < len(t.items)-1 {
-							t.focusedItem++
-						}
-					case "⏎", "⌤":
-						t.showMenu = false
-						t.ed = t.newEditor(it.new())
-						*t.typ = t.ed.Type()
-						if ed, ok := t.ed.(Focuser); ok {
-							ed.Focus(gtx)
-						} else {
-							t.parent.Focus(gtx)
-						}
-					case "⎋":
-						t.showMenu = false
-						t.parent.Focus(gtx)
-					}
-				}
-			}
-		}
-
-		key.FocusOp{Tag: t}.Add(gtx.Ops)
-		key.InputOp{
-			Tag:  t,
-			Keys: "↑|↓|⏎|⌤|⎋",
-		}.Add(gtx.Ops)
+		return t.focusMenu.Layout(gtx, w)
 	}
-
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx C) D {
-			if i != t.focusedItem {
-				return D{}
-			}
-			paint.FillShape(gtx.Ops, color.NRGBA{A: 64},
-				clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4)).Op(gtx.Ops))
-			return D{Size: gtx.Constraints.Min}
-		}),
-		layout.Stacked(func(gtx C) D {
-			return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
-				return material.Body1(theme, it.txt).Layout(gtx)
-			})
-		}),
-	)
-}
-
-func (t *TypeEditor) itemClicked(gtx C) typeEditor {
-	for _, i := range t.items {
-		if i.c.Clicked(gtx) {
-			return t.newEditor(i.new())
-		}
-	}
-	return nil
+	return w(gtx)
 }
