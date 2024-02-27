@@ -21,7 +21,6 @@ type PackageEditor struct {
 	list        layout.List
 	focusedType int
 	ed          *TypeNameEditor
-	first       bool
 }
 
 func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
@@ -40,8 +39,7 @@ func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
 }
 
 func (ed *PackageEditor) Layout(gtx C) D {
-	if !ed.first {
-		ed.first = true
+	if gtx.Focused(nil) {
 		ed.Focus(gtx)
 	}
 
