@@ -64,7 +64,7 @@ func (e *EnumTypeEditor) insertElem(gtx C, el *EnumElemTypeEditor, before bool) 
 	elem := &types.EnumElemType{Type: &types.StructType{}}
 	e.typ.Elems = slices.Insert(e.typ.Elems, i, elem)
 	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.loader))
-	e.elems[i].named.Focus(gtx)
+	e.elems[i].named.Edit(gtx)
 }
 
 func (e *EnumTypeEditor) swap(el *EnumElemTypeEditor, next bool) {
@@ -144,13 +144,11 @@ func (e *EnumTypeEditor) Layout(gtx C) D {
 type EnumElemTypeEditor struct {
 	parent *EnumTypeEditor
 	typ    *types.EnumElemType
-	named  editor
-	typed  *StructTypeEditor
+	KeyFocus
+	named nameEditor
+	typed *StructTypeEditor
 
 	nameRec Recording
-
-	KeyFocus
-	focusNamed KeyFocus
 }
 
 func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, loader *types.Loader) *EnumElemTypeEditor {
@@ -168,7 +166,7 @@ func (e *EnumElemTypeEditor) Update(gtx C) {
 	for _, ev := range e.KeyFocus.Events(gtx) {
 		switch ev.Name {
 		case "←":
-			e.focusNamed.Focus(gtx)
+			e.named.Focus(gtx)
 		case "→":
 			e.typed.Focus(gtx)
 		case "↑":
@@ -190,7 +188,7 @@ func (e *EnumElemTypeEditor) Update(gtx C) {
 		}
 	}
 
-	for _, ev := range e.focusNamed.Events(gtx) {
+	for _, ev := range e.named.Events(gtx) {
 		switch ev.Name {
 		case "→":
 			e.Focus(gtx)
@@ -210,10 +208,10 @@ func (e *EnumElemTypeEditor) Update(gtx C) {
 			}
 		case "⏎", "⌤":
 			e.named.SetCaret(e.named.Len(), e.named.Len())
-			e.named.Focus(gtx)
+			e.named.Edit(gtx)
 		case "⌫", "⌦":
 			e.named.SetCaret(e.named.Len(), 0)
-			e.named.Focus(gtx)
+			e.named.Edit(gtx)
 		}
 	}
 
@@ -265,9 +263,7 @@ func (e *EnumElemTypeEditor) Layout(gtx C, nameWidth int) D {
 			return e.KeyFocus.Layout(gtx, func(gtx C) D {
 				return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 					layout.Rigid(layout.Spacer{Width: indent}.Layout),
-					layout.Rigid(func(gtx C) D {
-						return e.focusNamed.Layout(gtx, e.nameRec.Layout)
-					}),
+					layout.Rigid(e.nameRec.Layout),
 					layout.Rigid(layout.Spacer{Width: 8}.Layout),
 					layout.Rigid(e.typed.Layout),
 				)

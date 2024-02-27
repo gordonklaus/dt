@@ -11,11 +11,8 @@ import (
 type TypeNameEditor struct {
 	parent Focuser
 	typ    *types.TypeName
-	named  editor
+	named  nameEditor
 	typed  *TypeEditor
-
-	KeyFocus
-	focusTyped KeyFocus
 }
 
 func NewTypeNameEditor(parent Focuser, typ *types.TypeName, loader *types.Loader) *TypeNameEditor {
@@ -24,24 +21,28 @@ func NewTypeNameEditor(parent Focuser, typ *types.TypeName, loader *types.Loader
 		typ:    typ,
 		named:  newEditor(),
 	}
-	n.typed = NewTypeNameTypeEditor(&n.focusTyped, &typ.Type, loader)
+	n.typed = NewTypeNameTypeEditor(&typ.Type, loader)
 	n.named.SetText(typ.Name)
 	return n
 }
 
+func (n *TypeNameEditor) Focus(gtx C) {
+	n.named.Focus(gtx)
+}
+
 func (n *TypeNameEditor) Layout(gtx C) D {
-	for _, e := range n.KeyFocus.Events(gtx) {
+	for _, e := range n.named.Events(gtx) {
 		switch e.Name {
 		case "←", "↑":
 			n.parent.Focus(gtx)
 		case "→", "↓":
-			n.focusTyped.Focus(gtx)
+			n.typed.Focus(gtx)
 		case "⏎", "⌤":
 			n.named.SetCaret(n.named.Len(), n.named.Len())
-			n.named.Focus(gtx)
+			n.named.Edit(gtx)
 		case "⌫", "⌦":
 			n.named.SetCaret(n.named.Len(), 0)
-			n.named.Focus(gtx)
+			n.named.Edit(gtx)
 		}
 	}
 
@@ -69,7 +70,7 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		}
 	}
 
-	for _, e := range n.focusTyped.Events(gtx) {
+	for _, e := range n.typed.Events(gtx) {
 		switch e.Name {
 		case "←", "↑":
 			n.Focus(gtx)
@@ -81,7 +82,7 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 	}
 
 	if n.typ.Name == "" {
-		n.named.Focus(gtx)
+		n.named.Edit(gtx)
 	} else if n.typ.Type == nil {
 		n.typed.Edit(gtx)
 	}
@@ -94,22 +95,19 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		Axis:      axis,
 		Alignment: layout.Middle,
 	}.Layout(gtx,
-		layout.Rigid(func(gtx C) D {
-			return n.KeyFocus.Layout(gtx, n.named.Layout)
-		}),
+		layout.Rigid(n.named.Layout),
 		layout.Rigid(layout.Spacer{Width: 4, Height: 4}.Layout),
-		layout.Rigid(func(gtx C) D {
-			return n.focusTyped.Layout(gtx, n.typed.Layout)
-		}),
+		layout.Rigid(n.typed.Layout),
 	)
 }
 
-type editor struct {
+type nameEditor struct {
+	KeyFocus
 	widget.Editor
 }
 
-func newEditor() editor {
-	return editor{
+func newEditor() nameEditor {
+	return nameEditor{
 		Editor: widget.Editor{
 			SingleLine: true,
 			Submit:     true,
@@ -117,12 +115,12 @@ func newEditor() editor {
 	}
 }
 
-func (ed *editor) Focus(gtx C) {
+func (ed *nameEditor) Edit(gtx C) {
 	gtx.Execute(key.FocusCmd{Tag: &ed.Editor})
 }
 
-func (ed *editor) Layout(gtx C) D {
-	return material.Editor(theme, &ed.Editor, "").Layout(gtx)
+func (ed *nameEditor) Layout(gtx C) D {
+	return ed.KeyFocus.Layout(gtx, material.Editor(theme, &ed.Editor, "").Layout)
 }
 
 func validName(name string) bool {

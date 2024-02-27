@@ -14,10 +14,10 @@ import (
 )
 
 type TypeEditor struct {
-	parent Focuser
 	typ    *types.Type
 	loader *types.Loader
 
+	KeyFocus
 	focusMenu   KeyFocus
 	menu        layout.List
 	items       []*typeMenuItem
@@ -36,8 +36,8 @@ type typeEditor interface {
 	Layout(gtx C) D
 }
 
-func NewTypeNameTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(parent, typ, loader)
+func NewTypeNameTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(typ, loader)
 	t.items = []*typeMenuItem{
 		{txt: "struct", new: func() types.Type { return &types.StructType{} }},
 		{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
@@ -45,8 +45,8 @@ func NewTypeNameTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader
 	return t
 }
 
-func NewMapKeyTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(parent, typ, loader)
+func NewMapKeyTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(typ, loader)
 	t.items = []*typeMenuItem{
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
 		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
@@ -57,8 +57,8 @@ func NewMapKeyTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) 
 	return t
 }
 
-func NewTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(parent, typ, loader)
+func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+	t := newTypeEditor(typ, loader)
 	t.items = []*typeMenuItem{
 		{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
@@ -80,9 +80,8 @@ func NewTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeE
 	return t
 }
 
-func newTypeEditor(parent Focuser, typ *types.Type, loader *types.Loader) *TypeEditor {
+func newTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	t := &TypeEditor{
-		parent: parent,
 		typ:    typ,
 		loader: loader,
 		menu:   layout.List{Axis: layout.Vertical},
@@ -104,9 +103,9 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	case *types.StringType:
 		return NewStringTypeEditor(typ)
 	case *types.StructType:
-		return NewStructTypeEditor(t.parent, typ, t.loader)
+		return NewStructTypeEditor(t, typ, t.loader)
 	case *types.EnumType:
-		return NewEnumTypeEditor(t.parent, typ, t.loader)
+		return NewEnumTypeEditor(t, typ, t.loader)
 	case *types.ArrayType:
 		return NewArrayTypeEditor(t, typ, t.loader)
 	case *types.MapType:
@@ -129,7 +128,7 @@ func (t *TypeEditor) Layout(gtx C) D {
 	return layout.Stack{Alignment: layout.SE}.Layout(gtx,
 		layout.Stacked(func(gtx C) D {
 			if t.ed != nil {
-				return t.ed.Layout(gtx)
+				return t.KeyFocus.Layout(gtx, t.ed.Layout)
 			}
 			lbl := material.Body1(theme, "type")
 			lbl.Font.Style = font.Italic
@@ -157,10 +156,10 @@ func (t *TypeEditor) updateMenu(gtx C) {
 				if ed, ok := t.ed.(Focuser); ok {
 					ed.Focus(gtx)
 				} else {
-					t.parent.Focus(gtx)
+					t.Focus(gtx)
 				}
 			case "⎋":
-				t.parent.Focus(gtx)
+				t.Focus(gtx)
 			}
 		}
 	}

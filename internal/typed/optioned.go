@@ -10,8 +10,6 @@ type OptionTypeEditor struct {
 	parent *TypeEditor
 	typ    *types.OptionType
 	elem   *TypeEditor
-
-	KeyFocus
 }
 
 func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *types.Loader) *OptionTypeEditor {
@@ -19,28 +17,32 @@ func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *type
 		parent: parent,
 		typ:    typ,
 	}
-	o.elem = NewTypeEditor(o, &typ.Elem, loader)
+	o.elem = NewTypeEditor(&typ.Elem, loader)
 	return o
 }
 
 func (o *OptionTypeEditor) Type() types.Type { return o.typ }
 
+func (o *OptionTypeEditor) Focus(gtx C) {
+	o.elem.Focus(gtx)
+}
+
 func (o *OptionTypeEditor) Layout(gtx C) D {
-	for _, e := range o.KeyFocus.Events(gtx) {
+	for _, e := range o.elem.Events(gtx) {
 		switch e.Name {
 		case "→":
 			if ed, ok := o.elem.ed.(Focuser); ok {
 				ed.Focus(gtx)
 			}
 		case "←":
-			o.parent.parent.Focus(gtx)
+			o.parent.Focus(gtx)
 		case "⏎", "⌤", "⌫", "⌦":
 			o.elem.Edit(gtx)
 		}
 	}
 
 	if o.typ.Elem == nil {
-		if o.Focused(gtx) {
+		if o.elem.Focused(gtx) {
 			*o.parent.typ = nil
 			o.parent.ed = nil
 			o.parent.Edit(gtx)
@@ -51,8 +53,6 @@ func (o *OptionTypeEditor) Layout(gtx C) D {
 
 	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
 		layout.Rigid(material.Body1(theme, "?").Layout),
-		layout.Rigid(func(gtx C) D {
-			return o.KeyFocus.Layout(gtx, o.elem.Layout)
-		}),
+		layout.Rigid(o.elem.Layout),
 	)
 }
