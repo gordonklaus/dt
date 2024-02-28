@@ -66,7 +66,7 @@ events:
 		case ed.Event(gtx, &e, 0, 0, "→"):
 			ed.ed.Focus(gtx)
 		case ed.Event(gtx, &e, 0, key.ModShift, "↑"):
-			if ed.focusedType > 0 && ed.Focused(gtx) {
+			if ed.focusedType > 0 {
 				ed.focusedType--
 				if e.Modifiers == key.ModShift {
 					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType+1] = ed.pkg.Types[ed.focusedType+1], ed.pkg.Types[ed.focusedType]
@@ -75,7 +75,7 @@ events:
 				}
 			}
 		case ed.Event(gtx, &e, 0, key.ModShift, "↓"):
-			if ed.focusedType < len(ed.pkg.Types)-1 && ed.Focused(gtx) {
+			if ed.focusedType < len(ed.pkg.Types)-1 {
 				ed.focusedType++
 				if e.Modifiers == key.ModShift {
 					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType-1] = ed.pkg.Types[ed.focusedType-1], ed.pkg.Types[ed.focusedType]

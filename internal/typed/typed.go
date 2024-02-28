@@ -123,6 +123,22 @@ func (t *TypeEditor) Edit(gtx C) {
 }
 
 func (t *TypeEditor) Layout(gtx C) D {
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case t.FocusEvent(gtx):
+		case t.Event(gtx, &e, 0, 0, "→"):
+			if ed, ok := t.ed.(Focuser); ok {
+				ed.Focus(gtx)
+			}
+		case t.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
+			t.Edit(gtx)
+		}
+	}
+
 	t.updateMenu(gtx)
 
 	return layout.Stack{Alignment: layout.SE}.Layout(gtx,

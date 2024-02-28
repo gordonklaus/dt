@@ -42,12 +42,6 @@ nevents:
 			n.parent.Focus(gtx)
 		case n.named.Event(gtx, &e, 0, 0, "→", "↓"):
 			n.typed.Focus(gtx)
-		case n.named.Event(gtx, &e, 0, 0, "⏎", "⌤"):
-			n.named.SetCaret(n.named.Len(), n.named.Len())
-			n.named.Edit(gtx)
-		case n.named.Event(gtx, &e, 0, 0, "⌫", "⌦"):
-			n.named.SetCaret(n.named.Len(), 0)
-			n.named.Edit(gtx)
 		}
 	}
 
@@ -56,12 +50,9 @@ nevents:
 		if !ok {
 			break
 		}
-		switch e := e.(type) {
-		case key.Event:
-			if e.Name == "⎋" {
-				n.named.SetText(n.typ.Name)
-				n.Focus(gtx)
-			}
+		if e.(key.Event).State == key.Press {
+			n.named.SetText(n.typ.Name)
+			n.Focus(gtx)
 		}
 	}
 
@@ -86,8 +77,6 @@ tevents:
 			n.Focus(gtx)
 		case n.typed.Event(gtx, &e, 0, 0, "→", "↓"):
 			n.typed.ed.(Focuser).Focus(gtx)
-		case n.typed.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
-			n.typed.Edit(gtx)
 		}
 	}
 
@@ -130,6 +119,20 @@ func (ed *nameEditor) Edit(gtx C) {
 }
 
 func (ed *nameEditor) Layout(gtx C) D {
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case ed.Event(gtx, &e, 0, 0, "⏎", "⌤"):
+			ed.SetCaret(ed.Len(), ed.Len())
+			ed.Edit(gtx)
+		case ed.Event(gtx, &e, 0, 0, "⌫", "⌦"):
+			ed.SetCaret(ed.Len(), 0)
+			ed.Edit(gtx)
+		}
+	}
 	return ed.KeyFocus.Layout(gtx, material.Editor(theme, &ed.Editor, "").Layout)
 }
 

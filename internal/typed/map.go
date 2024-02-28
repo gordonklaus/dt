@@ -41,8 +41,6 @@ kevents:
 			m.value.Focus(gtx)
 		case m.key.Event(gtx, &e, 0, 0, "←"):
 			m.parent.Focus(gtx)
-		case m.key.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
-			m.key.Edit(gtx)
 		}
 	}
 
@@ -53,14 +51,8 @@ vevents:
 		default:
 			break vevents
 		case m.value.FocusEvent(gtx):
-		case m.value.Event(gtx, &e, 0, 0, "→"):
-			if ed, ok := m.value.ed.(Focuser); ok {
-				ed.Focus(gtx)
-			}
 		case m.value.Event(gtx, &e, 0, 0, "←"):
 			m.key.Focus(gtx)
-		case m.value.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
-			m.value.Edit(gtx)
 		}
 	}
 

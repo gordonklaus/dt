@@ -181,17 +181,11 @@ events:
 			f.named.Focus(gtx)
 		case f.Event(gtx, &e, 0, 0, "→"):
 			f.typed.Focus(gtx)
-		case f.Event(gtx, &e, 0, key.ModShift, "↑"):
+		case f.Event(gtx, &e, 0, key.ModShift, "↑", "↓"):
 			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, false)
+				f.parent.swap(f, e.Name == "↓")
 			} else {
-				f.parent.focusNext(gtx, f, false)
-			}
-		case f.Event(gtx, &e, 0, key.ModShift, "↓"):
-			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, true)
-			} else {
-				f.parent.focusNext(gtx, f, true)
+				f.parent.focusNext(gtx, f, e.Name == "↓")
 			}
 		case f.Event(gtx, &e, 0, key.ModShift, "⏎", "⌤"):
 			f.parent.insertField(gtx, f, e.Modifiers == key.ModShift)
@@ -211,24 +205,12 @@ nevents:
 			f.Focus(gtx)
 		case f.named.Event(gtx, &e, 0, 0, "←"):
 			f.parent.parent.Focus(gtx)
-		case f.named.Event(gtx, &e, 0, key.ModShift, "↑"):
+		case f.named.Event(gtx, &e, 0, key.ModShift, "↑", "↓"):
 			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, false)
+				f.parent.swap(f, e.Name == "↓")
 			} else {
-				f.parent.focusNext(gtx, f, false)
+				f.parent.focusNext(gtx, f, e.Name == "↓")
 			}
-		case f.named.Event(gtx, &e, 0, key.ModShift, "↓"):
-			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, true)
-			} else {
-				f.parent.focusNext(gtx, f, true)
-			}
-		case f.named.Event(gtx, &e, 0, 0, "⏎", "⌤"):
-			f.named.SetCaret(f.named.Len(), f.named.Len())
-			f.named.Edit(gtx)
-		case f.named.Event(gtx, &e, 0, 0, "⌫", "⌦"):
-			f.named.SetCaret(f.named.Len(), 0)
-			f.named.Edit(gtx)
 		}
 	}
 
@@ -241,18 +223,12 @@ nevents:
 		if !ok {
 			break
 		}
-		switch e := e.(type) {
-		case key.Event:
-			if e.State == key.Press {
-				switch e.Name {
-				case "←", "⎋":
-					if f.typ.Name == "" || f.typ.Type == nil {
-						f.parent.deleteField(gtx, f, true)
-					} else {
-						f.named.SetText(f.typ.Name)
-						f.Focus(gtx)
-					}
-				}
+		if e.(key.Event).State == key.Press {
+			if f.typ.Name == "" || f.typ.Type == nil {
+				f.parent.deleteField(gtx, f, true)
+			} else {
+				f.named.SetText(f.typ.Name)
+				f.Focus(gtx)
 			}
 		}
 	}
@@ -282,26 +258,14 @@ tevents:
 		default:
 			break tevents
 		case f.typed.FocusEvent(gtx):
-		case f.typed.Event(gtx, &e, 0, 0, "→"):
-			if ed, ok := f.typed.ed.(Focuser); ok {
-				ed.Focus(gtx)
-			}
 		case f.typed.Event(gtx, &e, 0, 0, "←"):
 			f.Focus(gtx)
-		case f.typed.Event(gtx, &e, 0, key.ModShift, "↑"):
+		case f.typed.Event(gtx, &e, 0, key.ModShift, "↑", "↓"):
 			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, false)
+				f.parent.swap(f, e.Name == "↓")
 			} else {
-				f.parent.focusNext(gtx, f, false)
+				f.parent.focusNext(gtx, f, e.Name == "↓")
 			}
-		case f.typed.Event(gtx, &e, 0, key.ModShift, "↓"):
-			if e.Modifiers == key.ModShift {
-				f.parent.swap(f, true)
-			} else {
-				f.parent.focusNext(gtx, f, true)
-			}
-		case f.typed.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
-			f.typed.Edit(gtx)
 		}
 	}
 

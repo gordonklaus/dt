@@ -36,14 +36,8 @@ events:
 		default:
 			break events
 		case a.elem.FocusEvent(gtx):
-		case a.elem.Event(gtx, &e, 0, 0, "→"):
-			if ed, ok := a.elem.ed.(Focuser); ok {
-				ed.Focus(gtx)
-			}
 		case a.elem.Event(gtx, &e, 0, 0, "←"):
 			a.parent.Focus(gtx)
-		case a.elem.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
-			a.elem.Edit(gtx)
 		}
 	}
 
