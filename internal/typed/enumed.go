@@ -94,7 +94,8 @@ func (e *EnumTypeEditor) deleteElem(gtx C, el *EnumElemTypeEditor, back bool) {
 }
 
 func (e *EnumTypeEditor) Layout(gtx C) D {
-	for _, f := range e.elems {
+	// Iterate over a copy because e.elems may mutate during iteration.
+	for _, f := range slices.Clone(e.elems) {
 		f.Update(gtx)
 	}
 

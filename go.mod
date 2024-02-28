@@ -1,6 +1,6 @@
 module github.com/gordonklaus/dt
 
-go 1.21
+go 1.22.0
 
 require (
 	gioui.org v0.5.0

@@ -100,7 +100,8 @@ func (s *StructTypeEditor) deleteField(gtx C, f *StructFieldTypeEditor, back boo
 }
 
 func (s *StructTypeEditor) Layout(gtx C) D {
-	for _, f := range s.fields {
+	// Iterate over a copy because s.fields may mutate during iteration.
+	for _, f := range slices.Clone(s.fields) {
 		f.Update(gtx)
 	}
 
