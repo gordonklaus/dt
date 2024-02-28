@@ -28,28 +28,25 @@ func (f *KeyFocus) Focused(gtx C) bool {
 	return gtx.Focused(f)
 }
 
-func (f *KeyFocus) Events(gtx C) []key.Event {
-	events := []key.Event{}
-	for {
-		e, ok := gtx.Event(
-			key.FocusFilter{Target: f},
-			key.Filter{Focus: f, Optional: key.ModCommand | key.ModShift | key.ModAlt | key.ModSuper},
-		)
-		if !ok {
-			break
-		}
-		switch e := e.(type) {
-		case key.FocusEvent:
-		case key.Event:
-			if e.State == key.Press {
-				events = append(events, e)
-			}
-		}
-	}
-
+func (f *KeyFocus) FocusEvent(gtx C) bool {
 	event.Op(gtx.Ops, f)
+	e, _ := gtx.Event(key.FocusFilter{Target: f})
+	_, ok := e.(key.FocusEvent)
+	return ok
+}
 
-	return events
+func (f *KeyFocus) Event(gtx C, e *key.Event, required, optional key.Modifiers, names ...key.Name) bool {
+	event.Op(gtx.Ops, f)
+	filters := make([]event.Filter, len(names))
+	for i, name := range names {
+		filters[i] = key.Filter{Focus: f, Required: required, Optional: optional, Name: name}
+	}
+	ev, _ := gtx.Event(filters...)
+	if ev, ok := ev.(key.Event); ok && ev.State == key.Press {
+		*e = ev
+		return true
+	}
+	return false
 }
 
 func (f *KeyFocus) Layout(gtx C, w layout.Widget) D {

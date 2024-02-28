@@ -1,6 +1,7 @@
 package typed
 
 import (
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
@@ -28,15 +29,20 @@ func (a *ArrayTypeEditor) Focus(gtx C) {
 }
 
 func (a *ArrayTypeEditor) Layout(gtx C) D {
-	for _, e := range a.elem.Events(gtx) {
-		switch e.Name {
-		case "→":
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case a.elem.FocusEvent(gtx):
+		case a.elem.Event(gtx, &e, 0, 0, "→"):
 			if ed, ok := a.elem.ed.(Focuser); ok {
 				ed.Focus(gtx)
 			}
-		case "←":
+		case a.elem.Event(gtx, &e, 0, 0, "←"):
 			a.parent.Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
+		case a.elem.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
 			a.elem.Edit(gtx)
 		}
 	}

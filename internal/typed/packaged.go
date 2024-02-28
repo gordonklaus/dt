@@ -43,11 +43,29 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		ed.Focus(gtx)
 	}
 
-	for _, e := range ed.Events(gtx) {
-		switch e.Name {
-		case "→":
+	for {
+		e, ok := gtx.Event(key.Filter{Name: "S", Required: key.ModShortcut})
+		if !ok {
+			break
+		}
+		switch e := e.(type) {
+		case key.Event:
+			if e.Name == "S" {
+				ed.loader.Store(&types.PackageID_Current{})
+			}
+		}
+	}
+
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case ed.FocusEvent(gtx):
+		case ed.Event(gtx, &e, 0, 0, "→"):
 			ed.ed.Focus(gtx)
-		case "↑":
+		case ed.Event(gtx, &e, 0, key.ModShift, "↑"):
 			if ed.focusedType > 0 && ed.Focused(gtx) {
 				ed.focusedType--
 				if e.Modifiers == key.ModShift {
@@ -56,7 +74,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
 				}
 			}
-		case "↓":
+		case ed.Event(gtx, &e, 0, key.ModShift, "↓"):
 			if ed.focusedType < len(ed.pkg.Types)-1 && ed.Focused(gtx) {
 				ed.focusedType++
 				if e.Modifiers == key.ModShift {
@@ -65,7 +83,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
 				}
 			}
-		case "⏎", "⌤":
+		case ed.Event(gtx, &e, 0, key.ModShift, "⏎", "⌤"):
 			var id uint64
 		restart:
 			for _, nt := range ed.pkg.Types {
@@ -81,7 +99,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
 			ed.ed = NewTypeNameEditor(ed, n, ed.loader)
 			ed.ed.Focus(gtx)
-		case "⌫", "⌦":
+		case ed.Event(gtx, &e, 0, key.ModShift, "⌫", "⌦"):
 			// TODO: Check if this type is referenced elsewhere and, if so, ask the user if they want to delete those references.
 			if len(ed.pkg.Types) == 1 {
 				ed.pkg.Types = []*types.TypeName{{}}
@@ -94,8 +112,6 @@ func (ed *PackageEditor) Layout(gtx C) D {
 				ed.focusedType--
 			}
 			ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
-		case "S":
-			ed.loader.Store(&types.PackageID_Current{})
 		}
 	}
 

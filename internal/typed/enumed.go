@@ -163,53 +163,63 @@ func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, load
 }
 
 func (e *EnumElemTypeEditor) Update(gtx C) {
-	for _, ev := range e.KeyFocus.Events(gtx) {
-		switch ev.Name {
-		case "←":
+events:
+	for {
+		var ev key.Event
+		switch {
+		default:
+			break events
+		case e.FocusEvent(gtx):
+		case e.Event(gtx, &ev, 0, 0, "←"):
 			e.named.Focus(gtx)
-		case "→":
+		case e.Event(gtx, &ev, 0, 0, "→"):
 			e.typed.Focus(gtx)
-		case "↑":
+		case e.Event(gtx, &ev, 0, key.ModShift, "↑"):
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, false)
 			} else {
 				e.parent.focusNext(gtx, e, false)
 			}
-		case "↓":
+		case e.Event(gtx, &ev, 0, key.ModShift, "↓"):
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, true)
 			} else {
 				e.parent.focusNext(gtx, e, true)
 			}
-		case "⏎", "⌤":
+		case e.Event(gtx, &ev, 0, key.ModShift, "⏎", "⌤"):
 			e.parent.insertElem(gtx, e, ev.Modifiers == key.ModShift)
-		case "⌫", "⌦":
+		case e.Event(gtx, &ev, 0, key.ModShift, "⌫", "⌦"):
 			e.parent.deleteElem(gtx, e, ev.Name == "⌫" && ev.Modifiers == 0)
 		}
 	}
 
-	for _, ev := range e.named.Events(gtx) {
-		switch ev.Name {
-		case "→":
+nevents:
+	for {
+		var ev key.Event
+		switch {
+		default:
+			break nevents
+		case e.named.FocusEvent(gtx):
+		case e.named.Event(gtx, &ev, 0, 0, "→"):
 			e.Focus(gtx)
-		case "←":
+		case e.named.Event(gtx, &ev, 0, 0, "←"):
 			e.parent.focusNext(gtx, e, false)
-		case "↑":
+		case e.named.Event(gtx, &ev, 0, key.ModShift, "↑"):
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, false)
 			} else {
 				e.parent.focusNext(gtx, e, false)
 			}
-		case "↓":
+		case e.named.Event(gtx, &ev, 0, key.ModShift, "↓"):
 			if ev.Modifiers == key.ModShift {
 				e.parent.swap(e, true)
 			} else {
 				e.parent.focusNext(gtx, e, true)
 			}
-		case "⏎", "⌤":
+		case e.named.Event(gtx, &ev, 0, 0, "⏎", "⌤"):
 			e.named.SetCaret(e.named.Len(), e.named.Len())
 			e.named.Edit(gtx)
-		case "⌫", "⌦":
+		case e.named.Event(gtx, &ev, 0, 0, "⌫", "⌦"):
 			e.named.SetCaret(e.named.Len(), 0)
 			e.named.Edit(gtx)
 		}

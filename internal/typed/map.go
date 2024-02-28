@@ -1,6 +1,7 @@
 package typed
 
 import (
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
@@ -29,26 +30,36 @@ func (m *MapTypeEditor) Focus(gtx C) {
 }
 
 func (m *MapTypeEditor) Layout(gtx C) D {
-	for _, e := range m.key.Events(gtx) {
-		switch e.Name {
-		case "→":
+kevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break kevents
+		case m.key.FocusEvent(gtx):
+		case m.key.Event(gtx, &e, 0, 0, "→"):
 			m.value.Focus(gtx)
-		case "←":
+		case m.key.Event(gtx, &e, 0, 0, "←"):
 			m.parent.Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
+		case m.key.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
 			m.key.Edit(gtx)
 		}
 	}
 
-	for _, e := range m.value.Events(gtx) {
-		switch e.Name {
-		case "→":
+vevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break vevents
+		case m.value.FocusEvent(gtx):
+		case m.value.Event(gtx, &e, 0, 0, "→"):
 			if ed, ok := m.value.ed.(Focuser); ok {
 				ed.Focus(gtx)
 			}
-		case "←":
+		case m.value.Event(gtx, &e, 0, 0, "←"):
 			m.key.Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
+		case m.value.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
 			m.value.Edit(gtx)
 		}
 	}

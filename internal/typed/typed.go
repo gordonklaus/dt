@@ -18,7 +18,7 @@ type TypeEditor struct {
 	loader *types.Loader
 
 	KeyFocus
-	focusMenu   KeyFocus
+	menuFocus   KeyFocus
 	menu        layout.List
 	items       []*typeMenuItem
 	focusedItem int
@@ -119,7 +119,7 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 }
 
 func (t *TypeEditor) Edit(gtx C) {
-	t.focusMenu.Focus(gtx)
+	t.menuFocus.Focus(gtx)
 }
 
 func (t *TypeEditor) Layout(gtx C) D {
@@ -139,34 +139,37 @@ func (t *TypeEditor) Layout(gtx C) D {
 }
 
 func (t *TypeEditor) updateMenu(gtx C) {
-	for _, e := range t.focusMenu.Events(gtx) {
-		if e.State == key.Press {
-			switch e.Name {
-			case "↑":
-				if t.focusedItem > 0 {
-					t.focusedItem--
-				}
-			case "↓":
-				if t.focusedItem < len(t.items)-1 {
-					t.focusedItem++
-				}
-			case "⏎", "⌤":
-				t.ed = t.newEditor(t.items[t.focusedItem].new())
-				*t.typ = t.ed.Type()
-				if ed, ok := t.ed.(Focuser); ok {
-					ed.Focus(gtx)
-				} else {
-					t.Focus(gtx)
-				}
-			case "⎋":
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case t.menuFocus.FocusEvent(gtx):
+		case t.menuFocus.Event(gtx, &e, 0, 0, "↑"):
+			if t.focusedItem > 0 {
+				t.focusedItem--
+			}
+		case t.menuFocus.Event(gtx, &e, 0, 0, "↓"):
+			if t.focusedItem < len(t.items)-1 {
+				t.focusedItem++
+			}
+		case t.menuFocus.Event(gtx, &e, 0, 0, "⏎", "⌤"):
+			t.ed = t.newEditor(t.items[t.focusedItem].new())
+			*t.typ = t.ed.Type()
+			if ed, ok := t.ed.(Focuser); ok {
+				ed.Focus(gtx)
+			} else {
 				t.Focus(gtx)
 			}
+		case t.menuFocus.Event(gtx, &e, 0, 0, "⎋"):
+			t.Focus(gtx)
 		}
 	}
 }
 
 func (t *TypeEditor) layoutMenu(gtx C) D {
-	if t.focusMenu.Focused(gtx) {
+	if t.menuFocus.Focused(gtx) {
 		m := op.Record(gtx.Ops)
 		layout.Stack{}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
@@ -198,7 +201,7 @@ func (t *TypeEditor) layoutMenu(gtx C) D {
 func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
 	w := material.Body1(theme, t.items[i].txt).Layout
 	if i == t.focusedItem {
-		return t.focusMenu.Layout(gtx, w)
+		return t.menuFocus.Layout(gtx, w)
 	}
 	return w(gtx)
 }

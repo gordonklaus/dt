@@ -31,16 +31,21 @@ func (n *TypeNameEditor) Focus(gtx C) {
 }
 
 func (n *TypeNameEditor) Layout(gtx C) D {
-	for _, e := range n.named.Events(gtx) {
-		switch e.Name {
-		case "←", "↑":
+nevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break nevents
+		case n.named.FocusEvent(gtx):
+		case n.named.Event(gtx, &e, 0, 0, "←", "↑"):
 			n.parent.Focus(gtx)
-		case "→", "↓":
+		case n.named.Event(gtx, &e, 0, 0, "→", "↓"):
 			n.typed.Focus(gtx)
-		case "⏎", "⌤":
+		case n.named.Event(gtx, &e, 0, 0, "⏎", "⌤"):
 			n.named.SetCaret(n.named.Len(), n.named.Len())
 			n.named.Edit(gtx)
-		case "⌫", "⌦":
+		case n.named.Event(gtx, &e, 0, 0, "⌫", "⌦"):
 			n.named.SetCaret(n.named.Len(), 0)
 			n.named.Edit(gtx)
 		}
@@ -70,13 +75,18 @@ func (n *TypeNameEditor) Layout(gtx C) D {
 		}
 	}
 
-	for _, e := range n.typed.Events(gtx) {
-		switch e.Name {
-		case "←", "↑":
+tevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break tevents
+		case n.typed.FocusEvent(gtx):
+		case n.typed.Event(gtx, &e, 0, 0, "←", "↑"):
 			n.Focus(gtx)
-		case "→", "↓":
+		case n.typed.Event(gtx, &e, 0, 0, "→", "↓"):
 			n.typed.ed.(Focuser).Focus(gtx)
-		case "⏎", "⌤", "⌫", "⌦":
+		case n.typed.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
 			n.typed.Edit(gtx)
 		}
 	}

@@ -170,53 +170,63 @@ func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldTy
 }
 
 func (f *StructFieldTypeEditor) Update(gtx C) {
-	for _, e := range f.KeyFocus.Events(gtx) {
-		switch e.Name {
-		case "←":
+events:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break events
+		case f.FocusEvent(gtx):
+		case f.Event(gtx, &e, 0, 0, "←"):
 			f.named.Focus(gtx)
-		case "→":
+		case f.Event(gtx, &e, 0, 0, "→"):
 			f.typed.Focus(gtx)
-		case "↑":
+		case f.Event(gtx, &e, 0, key.ModShift, "↑"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, false)
 			} else {
 				f.parent.focusNext(gtx, f, false)
 			}
-		case "↓":
+		case f.Event(gtx, &e, 0, key.ModShift, "↓"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, true)
 			} else {
 				f.parent.focusNext(gtx, f, true)
 			}
-		case "⏎", "⌤":
+		case f.Event(gtx, &e, 0, key.ModShift, "⏎", "⌤"):
 			f.parent.insertField(gtx, f, e.Modifiers == key.ModShift)
-		case "⌫", "⌦":
+		case f.Event(gtx, &e, 0, key.ModShift, "⌫", "⌦"):
 			f.parent.deleteField(gtx, f, e.Name == "⌫" && e.Modifiers == 0)
 		}
 	}
 
-	for _, e := range f.named.Events(gtx) {
-		switch e.Name {
-		case "→":
+nevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break nevents
+		case f.named.FocusEvent(gtx):
+		case f.named.Event(gtx, &e, 0, 0, "→"):
 			f.Focus(gtx)
-		case "←":
+		case f.named.Event(gtx, &e, 0, 0, "←"):
 			f.parent.parent.Focus(gtx)
-		case "↑":
+		case f.named.Event(gtx, &e, 0, key.ModShift, "↑"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, false)
 			} else {
 				f.parent.focusNext(gtx, f, false)
 			}
-		case "↓":
+		case f.named.Event(gtx, &e, 0, key.ModShift, "↓"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, true)
 			} else {
 				f.parent.focusNext(gtx, f, true)
 			}
-		case "⏎", "⌤":
+		case f.named.Event(gtx, &e, 0, 0, "⏎", "⌤"):
 			f.named.SetCaret(f.named.Len(), f.named.Len())
 			f.named.Edit(gtx)
-		case "⌫", "⌦":
+		case f.named.Event(gtx, &e, 0, 0, "⌫", "⌦"):
 			f.named.SetCaret(f.named.Len(), 0)
 			f.named.Edit(gtx)
 		}
@@ -265,27 +275,32 @@ func (f *StructFieldTypeEditor) Update(gtx C) {
 		}
 	}
 
-	for _, e := range f.typed.Events(gtx) {
-		switch e.Name {
-		case "→":
+tevents:
+	for {
+		var e key.Event
+		switch {
+		default:
+			break tevents
+		case f.typed.FocusEvent(gtx):
+		case f.typed.Event(gtx, &e, 0, 0, "→"):
 			if ed, ok := f.typed.ed.(Focuser); ok {
 				ed.Focus(gtx)
 			}
-		case "←":
+		case f.typed.Event(gtx, &e, 0, 0, "←"):
 			f.Focus(gtx)
-		case "↑":
+		case f.typed.Event(gtx, &e, 0, key.ModShift, "↑"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, false)
 			} else {
 				f.parent.focusNext(gtx, f, false)
 			}
-		case "↓":
+		case f.typed.Event(gtx, &e, 0, key.ModShift, "↓"):
 			if e.Modifiers == key.ModShift {
 				f.parent.swap(f, true)
 			} else {
 				f.parent.focusNext(gtx, f, true)
 			}
-		case "⏎", "⌤", "⌫", "⌦":
+		case f.typed.Event(gtx, &e, 0, 0, "⏎", "⌤", "⌫", "⌦"):
 			f.typed.Edit(gtx)
 		}
 	}
