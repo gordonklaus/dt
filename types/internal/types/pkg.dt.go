@@ -95,7 +95,9 @@ func (x *Type) Read(d *bits.Decoder) error {
 	return x.Type.Read(d)
 }
 
-type Type_Bool struct{}
+type Type_Bool struct {
+	_ byte // because pointers to empty structs may alias and lead to subtle bugs
+}
 
 func (x *Type_Bool) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
@@ -294,7 +296,9 @@ func (x *Type_Option) Read(d *bits.Decoder) error {
 	})
 }
 
-type Type_String struct{}
+type Type_String struct {
+	_ byte // because pointers to empty structs may alias and lead to subtle bugs
+}
 
 func (x *Type_String) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
@@ -557,7 +561,9 @@ func (x *PackageID) Read(d *bits.Decoder) error {
 	return x.PackageID.Read(d)
 }
 
-type PackageID_Current struct{}
+type PackageID_Current struct {
+	_ byte // because pointers to empty structs may alias and lead to subtle bugs
+}
 
 func (x *PackageID_Current) Write(e *bits.Encoder) {
 	e.WriteSize(func() {

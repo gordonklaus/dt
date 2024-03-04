@@ -127,6 +127,8 @@ func (w *goWriter) writeStruct(t *types.StructType, name string) {
 	}
 	if strings.HasSuffix(name, "__Unknown") {
 		w.writeln("I uint64")
+	} else if len(t.Fields) == 0 {
+		w.writeln("_ byte // because pointers to empty structs may alias and lead to subtle bugs")
 	}
 	w.writeln("}")
 
