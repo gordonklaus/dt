@@ -70,11 +70,11 @@ func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 		{txt: "map", new: func() types.Type { return &types.MapType{} }},
 		{txt: "option", new: func() types.Type { return &types.OptionType{} }},
 	}
-	pkg, _ := loader.Load(&types.PackageID_Current{})
+	pkg, _ := loader.Load(types.PackageID_Current{})
 	for _, n := range pkg.Types {
 		n := n
 		t.items = append(t.items, &typeMenuItem{txt: n.Name, new: func() types.Type {
-			return &types.NamedType{Package: &types.PackageID_Current{}, TypeName: n}
+			return &types.NamedType{Package: types.PackageID_Current{}, TypeName: n}
 		}})
 	}
 	return t

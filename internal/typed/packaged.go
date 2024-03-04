@@ -51,7 +51,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		switch e := e.(type) {
 		case key.Event:
 			if e.Name == "S" {
-				ed.loader.Store(&types.PackageID_Current{})
+				ed.loader.Store(types.PackageID_Current{})
 			}
 		}
 	}

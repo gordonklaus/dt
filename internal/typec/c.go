@@ -99,7 +99,7 @@ func toposort(typs []*types.TypeName) ([]*types.TypeName, bool) {
 		case *types.StructType:
 			for _, f := range t.Fields {
 				if n, ok := f.Type.(*types.NamedType); ok {
-					if _, ok := n.Package.(*types.PackageID_Current); ok && !visit(n.TypeName) {
+					if _, ok := n.Package.(types.PackageID_Current); ok && !visit(n.TypeName) {
 						return false
 					}
 				}
@@ -267,7 +267,7 @@ func (w *cWriter) typ(t types.Type) string {
 		return "dt_string"
 	case *types.NamedType:
 		pkg := "TODO"
-		if _, ok := t.Package.(*types.PackageID_Current); ok {
+		if _, ok := t.Package.(types.PackageID_Current); ok {
 			pkg = w.currentPkg.Name
 		}
 		return snake(pkg) + "__" + snake(t.TypeName.Name)

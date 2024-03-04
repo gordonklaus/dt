@@ -45,10 +45,10 @@ func main() {
 	}
 
 	loader := types.NewLoader(types.NewStorage(dir))
-	pkg, err := loader.Load(&types.PackageID_Current{}) // TODO: Resolve current package ID based on current directory and source control/module configuration.
+	pkg, err := loader.Load(types.PackageID_Current{}) // TODO: Resolve current package ID based on current directory and source control/module configuration.
 	if cmd == "edit" && errors.Is(err, fs.ErrNotExist) {
 		pkg = &types.Package{Name: filepath.Base(dir)}
-		loader.Packages[&types.PackageID_Current{}] = pkg
+		loader.Packages[types.PackageID_Current{}] = pkg
 	} else if err != nil {
 		fmt.Println(err)
 		return

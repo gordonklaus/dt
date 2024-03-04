@@ -22,7 +22,7 @@ type PackageID interface{ isPackageID() }
 
 type PackageID_Current struct{}
 
-func (*PackageID_Current) isPackageID() {}
+func (PackageID_Current) isPackageID() {}
 
 func (l *Loader) packageFromData(p types.Package, namedIDs map[*NamedType]uint64) *Package {
 	pkg := &Package{
@@ -61,14 +61,14 @@ func (l *Loader) packageToData(p *Package) types.Package {
 func packageIDFromData(p types.PackageID) PackageID {
 	switch p.PackageID.(type) {
 	case *types.PackageID_Current:
-		return &PackageID_Current{}
+		return PackageID_Current{}
 	}
 	panic("unreached")
 }
 
 func packageIDToData(p PackageID) types.PackageID {
 	switch p.(type) {
-	case *PackageID_Current:
+	case PackageID_Current:
 		return types.PackageID{PackageID: &types.PackageID_Current{}}
 	}
 	panic("unreached")
