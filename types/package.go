@@ -31,12 +31,7 @@ func (l *Loader) packageFromData(p types.Package, namedIDs map[*NamedType]uint64
 		Types: make([]*TypeName, len(p.Types)),
 	}
 	for i, t := range p.Types {
-		pkg.Types[i] = &TypeName{
-			ID:   t.ID,
-			Name: t.Name,
-			Doc:  t.Doc,
-			Type: l.typeFromData(t.Type, namedIDs),
-		}
+		pkg.Types[i] = l.typeNameFromData(t, namedIDs)
 	}
 	return pkg
 }
@@ -48,12 +43,7 @@ func (l *Loader) packageToData(p *Package) types.Package {
 		Types: make([]types.TypeName, len(p.Types)),
 	}
 	for i, t := range p.Types {
-		pkg.Types[i] = types.TypeName{
-			ID:   t.ID,
-			Name: t.Name,
-			Doc:  t.Doc,
-			Type: l.typeToData(t.Type),
-		}
+		pkg.Types[i] = *l.typeNameToData(t)
 	}
 	return pkg
 }

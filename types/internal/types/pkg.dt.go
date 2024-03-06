@@ -155,7 +155,7 @@ func (x *Type_Float) Read(d *bits.Decoder) error {
 }
 
 type Type_Enum struct {
-	Elements []EnumElement
+	Elements []TypeName
 }
 
 func (x *Type_Enum) Write(e *bits.Encoder) {
@@ -177,7 +177,7 @@ func (x *Type_Enum) Read(d *bits.Decoder) error {
 			if err := d.ReadVarUint(&len); err != nil {
 				return err
 			}
-			x.Elements = make([]EnumElement, len)
+			x.Elements = make([]TypeName, len)
 			for i := range x.Elements {
 				if err := (&(x.Elements)[i]).Read(d); err != nil {
 					return err
@@ -189,7 +189,7 @@ func (x *Type_Enum) Read(d *bits.Decoder) error {
 }
 
 type Type_Struct struct {
-	Fields []StructField
+	Fields []TypeName
 }
 
 func (x *Type_Struct) Write(e *bits.Encoder) {
@@ -211,7 +211,7 @@ func (x *Type_Struct) Read(d *bits.Decoder) error {
 			if err := d.ReadVarUint(&len); err != nil {
 				return err
 			}
-			x.Fields = make([]StructField, len)
+			x.Fields = make([]TypeName, len)
 			for i := range x.Fields {
 				if err := (&(x.Fields)[i]).Read(d); err != nil {
 					return err
@@ -352,98 +352,6 @@ func (x *Type__Unknown) Write(e *bits.Encoder) {
 
 func (x *Type__Unknown) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
-		return nil
-	})
-}
-
-type EnumElement struct {
-	ID   uint64
-	Name string
-	Doc  string
-	Type Type
-}
-
-func (x *EnumElement) Write(e *bits.Encoder) {
-	e.WriteSize(func() {
-		e.WriteVarUint(x.ID)
-		e.WriteString(x.Name)
-		e.WriteString(x.Doc)
-		(x.Type).Write(e)
-	})
-}
-
-func (x *EnumElement) Read(d *bits.Decoder) error {
-	return d.ReadSize(func() error {
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadVarUint(&x.ID); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadString(&x.Name); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadString(&x.Doc); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := (&x.Type).Read(d); err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
-type StructField struct {
-	ID   uint64
-	Name string
-	Doc  string
-	Type Type
-}
-
-func (x *StructField) Write(e *bits.Encoder) {
-	e.WriteSize(func() {
-		e.WriteVarUint(x.ID)
-		e.WriteString(x.Name)
-		e.WriteString(x.Doc)
-		(x.Type).Write(e)
-	})
-}
-
-func (x *StructField) Read(d *bits.Decoder) error {
-	return d.ReadSize(func() error {
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadVarUint(&x.ID); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadString(&x.Name); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := d.ReadString(&x.Doc); err != nil {
-			return err
-		}
-		if d.Remaining() == 0 {
-			return nil
-		}
-		if err := (&x.Type).Read(d); err != nil {
-			return err
-		}
 		return nil
 	})
 }
