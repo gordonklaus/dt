@@ -67,7 +67,7 @@ func (s *StructTypeEditor) insertField(gtx C, f *StructFieldTypeEditor, before b
 	if !before {
 		i++
 	}
-	field := &types.StructFieldType{}
+	field := &types.StructFieldType{ID: nextID(s.loader.Packages[types.PackageID_Current{}])}
 	s.typ.Fields = slices.Insert(s.typ.Fields, i, field)
 	s.fields = slices.Insert(s.fields, i, NewStructFieldTypeEditor(s, field, s.loader))
 	s.fields[i].named.Edit(gtx)

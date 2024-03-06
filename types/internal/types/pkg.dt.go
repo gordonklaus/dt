@@ -357,6 +357,7 @@ func (x *Type__Unknown) Read(d *bits.Decoder) error {
 }
 
 type EnumElement struct {
+	ID   uint64
 	Name string
 	Doc  string
 	Type Type
@@ -364,6 +365,7 @@ type EnumElement struct {
 
 func (x *EnumElement) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
+		e.WriteVarUint(x.ID)
 		e.WriteString(x.Name)
 		e.WriteString(x.Doc)
 		(x.Type).Write(e)
@@ -372,6 +374,12 @@ func (x *EnumElement) Write(e *bits.Encoder) {
 
 func (x *EnumElement) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
+		if err := d.ReadVarUint(&x.ID); err != nil {
+			return err
+		}
 		if d.Remaining() == 0 {
 			return nil
 		}
@@ -395,6 +403,7 @@ func (x *EnumElement) Read(d *bits.Decoder) error {
 }
 
 type StructField struct {
+	ID   uint64
 	Name string
 	Doc  string
 	Type Type
@@ -402,6 +411,7 @@ type StructField struct {
 
 func (x *StructField) Write(e *bits.Encoder) {
 	e.WriteSize(func() {
+		e.WriteVarUint(x.ID)
 		e.WriteString(x.Name)
 		e.WriteString(x.Doc)
 		(x.Type).Write(e)
@@ -410,6 +420,12 @@ func (x *StructField) Write(e *bits.Encoder) {
 
 func (x *StructField) Read(d *bits.Decoder) error {
 	return d.ReadSize(func() error {
+		if d.Remaining() == 0 {
+			return nil
+		}
+		if err := d.ReadVarUint(&x.ID); err != nil {
+			return err
+		}
 		if d.Remaining() == 0 {
 			return nil
 		}

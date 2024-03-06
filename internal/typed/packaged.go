@@ -3,6 +3,7 @@ package typed
 import (
 	"image"
 	"image/color"
+	"log"
 	"slices"
 
 	"gioui.org/io/key"
@@ -51,7 +52,9 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		switch e := e.(type) {
 		case key.Event:
 			if e.Name == "S" {
-				ed.loader.Store(types.PackageID_Current{})
+				if err := ed.loader.Store(types.PackageID_Current{}); err != nil {
+					log.Println(err)
+				}
 			}
 		}
 	}
@@ -84,15 +87,7 @@ events:
 				}
 			}
 		case ed.Event(gtx, &e, 0, key.ModShift, "⏎", "⌤"):
-			var id uint64
-		restart:
-			for _, nt := range ed.pkg.Types {
-				if nt.ID == id {
-					id++
-					goto restart
-				}
-			}
-			n := &types.TypeName{ID: id}
+			n := &types.TypeName{ID: nextID(ed.pkg)}
 			if e.Modifiers != key.ModShift && len(ed.pkg.Types) > 0 {
 				ed.focusedType++
 			}
@@ -148,4 +143,33 @@ func (ed *PackageEditor) layoutTypeName(gtx C, i int) D {
 			})
 		}),
 	)
+}
+
+func nextID(p *types.Package) uint64 {
+	var ids []uint64
+	for _, tn := range p.Types {
+		ids = append(ids, tn.ID)
+		switch t := tn.Type.(type) {
+		case *types.EnumType:
+			for _, e := range t.Elems {
+				ids = append(ids, e.ID)
+				for _, f := range e.Type.(*types.StructType).Fields {
+					ids = append(ids, f.ID)
+				}
+			}
+		case *types.StructType:
+			for _, f := range t.Fields {
+				ids = append(ids, f.ID)
+			}
+		}
+	}
+	slices.Sort(ids)
+	var id uint64
+	for i := range ids {
+		if id != ids[i] {
+			break
+		}
+		id++
+	}
+	return id
 }

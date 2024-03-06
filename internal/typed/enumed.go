@@ -61,7 +61,7 @@ func (e *EnumTypeEditor) insertElem(gtx C, el *EnumElemTypeEditor, before bool) 
 	if !before {
 		i++
 	}
-	elem := &types.EnumElemType{Type: &types.StructType{}}
+	elem := &types.EnumElemType{ID: nextID(e.loader.Packages[types.PackageID_Current{}]), Type: &types.StructType{}}
 	e.typ.Elems = slices.Insert(e.typ.Elems, i, elem)
 	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.loader))
 	e.elems[i].named.Edit(gtx)
