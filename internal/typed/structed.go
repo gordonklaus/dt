@@ -16,21 +16,21 @@ import (
 )
 
 type StructTypeEditor struct {
+	*Core
 	parent Focuser
 	typ    *types.StructType
-	loader *types.Loader
 	fields []*StructFieldTypeEditor
 }
 
-func NewStructTypeEditor(parent Focuser, typ *types.StructType, loader *types.Loader) *StructTypeEditor {
+func NewStructTypeEditor(parent Focuser, typ *types.StructType, core *Core) *StructTypeEditor {
 	s := &StructTypeEditor{
 		parent: parent,
 		typ:    typ,
-		loader: loader,
+		Core:   core,
 		fields: make([]*StructFieldTypeEditor, len(typ.Fields)),
 	}
 	for i, f := range typ.Fields {
-		s.fields[i] = NewStructFieldTypeEditor(s, f, loader)
+		s.fields[i] = NewStructFieldTypeEditor(s, f, core)
 	}
 	return s
 }
@@ -67,9 +67,16 @@ func (s *StructTypeEditor) insertField(gtx C, f *StructFieldTypeEditor, before b
 	if !before {
 		i++
 	}
-	field := &types.StructFieldType{ID: nextID(s.loader.Packages[types.PackageID_Current{}])}
+	field := &types.StructFieldType{ID: nextID(s.Pkg)}
+	switch p := s.parent.(type) {
+	case *TypeEditor:
+		field.Parent = p.typeName
+	case *EnumElemTypeEditor:
+		field.Parent = p.typ
+	}
 	s.typ.Fields = slices.Insert(s.typ.Fields, i, field)
-	s.fields = slices.Insert(s.fields, i, NewStructFieldTypeEditor(s, field, s.loader))
+	s.Pkg.TypesByID[field.ID] = field
+	s.fields = slices.Insert(s.fields, i, NewStructFieldTypeEditor(s, field, s.Core))
 	s.fields[i].named.Edit(gtx)
 }
 
@@ -88,6 +95,7 @@ func (s *StructTypeEditor) swap(f *StructFieldTypeEditor, next bool) {
 func (s *StructTypeEditor) deleteField(gtx C, f *StructFieldTypeEditor, back bool) {
 	i := slices.Index(s.fields, f)
 	s.typ.Fields = slices.Delete(s.typ.Fields, i, i+1)
+	delete(s.Pkg.TypesByID, f.typ.ID)
 	s.fields = slices.Delete(s.fields, i, i+1)
 	if i > 0 && (back || i >= len(s.fields)) {
 		i--
@@ -159,13 +167,13 @@ type StructFieldTypeEditor struct {
 	nameRec Recording
 }
 
-func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldType, loader *types.Loader) *StructFieldTypeEditor {
+func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldType, core *Core) *StructFieldTypeEditor {
 	f := &StructFieldTypeEditor{
 		parent: parent,
 		typ:    typ,
 		named:  newEditor(),
 	}
-	f.typed = NewTypeEditor(&typ.Type, loader)
+	f.typed = NewTypeEditor(&typ.Type, core)
 	f.named.SetText(typ.Name)
 	return f
 }

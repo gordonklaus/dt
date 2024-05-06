@@ -13,12 +13,12 @@ type ArrayTypeEditor struct {
 	elem   *TypeEditor
 }
 
-func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, loader *types.Loader) *ArrayTypeEditor {
+func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, core *Core) *ArrayTypeEditor {
 	a := &ArrayTypeEditor{
 		parent: parent,
 		typ:    typ,
 	}
-	a.elem = NewTypeEditor(&typ.Elem, loader)
+	a.elem = NewTypeEditor(&typ.Elem, core)
 	return a
 }
 

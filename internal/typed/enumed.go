@@ -15,21 +15,21 @@ import (
 )
 
 type EnumTypeEditor struct {
-	parent Focuser
+	*Core
+	parent *TypeEditor
 	typ    *types.EnumType
-	loader *types.Loader
 	elems  []*EnumElemTypeEditor
 }
 
-func NewEnumTypeEditor(parent Focuser, typ *types.EnumType, loader *types.Loader) *EnumTypeEditor {
+func NewEnumTypeEditor(parent *TypeEditor, typ *types.EnumType, core *Core) *EnumTypeEditor {
 	s := &EnumTypeEditor{
 		parent: parent,
 		typ:    typ,
-		loader: loader,
+		Core:   core,
 		elems:  make([]*EnumElemTypeEditor, len(typ.Elems)),
 	}
 	for i, f := range typ.Elems {
-		s.elems[i] = NewEnumElemTypeEditor(s, f, loader)
+		s.elems[i] = NewEnumElemTypeEditor(s, f, core)
 	}
 	return s
 }
@@ -61,9 +61,14 @@ func (e *EnumTypeEditor) insertElem(gtx C, el *EnumElemTypeEditor, before bool) 
 	if !before {
 		i++
 	}
-	elem := &types.EnumElemType{ID: nextID(e.loader.Packages[types.PackageID_Current{}]), Type: &types.StructType{}}
+	elem := &types.EnumElemType{
+		ID:     nextID(e.Pkg),
+		Type:   &types.StructType{},
+		Parent: e.parent.typeName,
+	}
 	e.typ.Elems = slices.Insert(e.typ.Elems, i, elem)
-	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.loader))
+	e.Pkg.TypesByID[elem.ID] = elem
+	e.elems = slices.Insert(e.elems, i, NewEnumElemTypeEditor(e, elem, e.Core))
 	e.elems[i].named.Edit(gtx)
 }
 
@@ -80,8 +85,12 @@ func (e *EnumTypeEditor) swap(el *EnumElemTypeEditor, next bool) {
 }
 
 func (e *EnumTypeEditor) deleteElem(gtx C, el *EnumElemTypeEditor, back bool) {
+	for len(el.typed.fields) > 0 {
+		el.typed.deleteField(gtx, el.typed.fields[0], true)
+	}
 	i := slices.Index(e.elems, el)
 	e.typ.Elems = slices.Delete(e.typ.Elems, i, i+1)
+	delete(e.Pkg.TypesByID, el.typ.ID)
 	e.elems = slices.Delete(e.elems, i, i+1)
 	if i > 0 && (back || i >= len(e.elems)) {
 		i--
@@ -152,13 +161,13 @@ type EnumElemTypeEditor struct {
 	nameRec Recording
 }
 
-func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, loader *types.Loader) *EnumElemTypeEditor {
+func NewEnumElemTypeEditor(parent *EnumTypeEditor, typ *types.EnumElemType, core *Core) *EnumElemTypeEditor {
 	f := &EnumElemTypeEditor{
 		parent: parent,
 		typ:    typ,
 		named:  newEditor(),
 	}
-	f.typed = NewStructTypeEditor(f, typ.Type.(*types.StructType), loader)
+	f.typed = NewStructTypeEditor(f, typ.Type.(*types.StructType), core)
 	f.named.SetText(typ.Name)
 	return f
 }

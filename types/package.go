@@ -7,15 +7,7 @@ import (
 type Package struct {
 	Name, Doc string
 	Types     []*TypeName
-}
-
-func (p *Package) Type(id uint64) *TypeName {
-	for _, t := range p.Types {
-		if t.ID == id {
-			return t
-		}
-	}
-	return nil
+	TypesByID map[uint64]*TypeName
 }
 
 type PackageID interface{ isPackageID() }
@@ -24,16 +16,17 @@ type PackageID_Current struct{}
 
 func (PackageID_Current) isPackageID() {}
 
-func (l *Loader) packageFromData(p types.Package, namedIDs map[*NamedType]uint64) *Package {
-	pkg := &Package{
-		Name:  p.Name,
-		Doc:   p.Doc,
-		Types: make([]*TypeName, len(p.Types)),
+func (l *packageLoader) packageFromData(p types.Package) *Package {
+	l.pkg = &Package{
+		Name:      p.Name,
+		Doc:       p.Doc,
+		Types:     make([]*TypeName, len(p.Types)),
+		TypesByID: make(map[uint64]*TypeName, len(p.Types)),
 	}
 	for i, t := range p.Types {
-		pkg.Types[i] = l.typeNameFromData(t, namedIDs)
+		l.pkg.Types[i] = l.typeNameFromData(t, l.pkg)
 	}
-	return pkg
+	return l.pkg
 }
 
 func (l *Loader) packageToData(p *Package) types.Package {

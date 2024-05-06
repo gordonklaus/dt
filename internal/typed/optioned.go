@@ -13,12 +13,12 @@ type OptionTypeEditor struct {
 	elem   *TypeEditor
 }
 
-func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, loader *types.Loader) *OptionTypeEditor {
+func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, core *Core) *OptionTypeEditor {
 	o := &OptionTypeEditor{
 		parent: parent,
 		typ:    typ,
 	}
-	o.elem = NewTypeEditor(&typ.Elem, loader)
+	o.elem = NewTypeEditor(&typ.Elem, core)
 	return o
 }
 

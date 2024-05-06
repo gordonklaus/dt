@@ -177,7 +177,11 @@ func (w *goWriter) writeType(t types.Type) {
 	case *types.StringType:
 		w.write("string")
 	case *types.NamedType:
-		w.write(camel(t.TypeName.Name))
+		name := camel(t.TypeName.Name)
+		if tn, ok := t.TypeName.Parent.(*types.TypeName); ok {
+			name = camel(tn.Name) + "_" + name
+		}
+		w.write(name)
 	}
 }
 

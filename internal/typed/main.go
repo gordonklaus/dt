@@ -32,7 +32,10 @@ func edit(loader *types.Loader, pkg *types.Package) {
 	w := app.NewWindow(app.Title("typEd"))
 	w.Perform(system.ActionMaximize)
 
-	ed := NewPackageEditor(pkg, loader)
+	ed := NewPackageEditor(&Core{
+		Loader: loader,
+		Pkg:    pkg,
+	})
 
 	var ops op.Ops
 	for {

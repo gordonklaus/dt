@@ -19,7 +19,7 @@ func (*MapType) isType()    {}
 func (*EnumType) isType()   {}
 func (*StructType) isType() {}
 
-func (l *Loader) typeFromData(t types.Type, namedIDs map[*NamedType]uint64) Type {
+func (l *packageLoader) typeFromData(t types.Type, parent any) Type {
 	switch t := t.Type.(type) {
 	case *types.Type_Bool:
 		return &BoolType{}
@@ -31,21 +31,21 @@ func (l *Loader) typeFromData(t types.Type, namedIDs map[*NamedType]uint64) Type
 		return &StringType{}
 	case *types.Type_Named:
 		nt := &NamedType{Package: packageIDFromData(t.Package)}
-		namedIDs[nt] = t.ID
+		l.namedIDs[nt] = t.ID
 		return nt
 	case *types.Type_Option:
-		return &OptionType{Elem: l.typeFromData(t.Element, namedIDs)}
+		return &OptionType{Elem: l.typeFromData(t.Element, nil)}
 	case *types.Type_Array:
-		return &ArrayType{Elem: l.typeFromData(t.Element, namedIDs)}
+		return &ArrayType{Elem: l.typeFromData(t.Element, nil)}
 	case *types.Type_Map:
 		return &MapType{
-			Key:   l.typeFromData(t.Key, namedIDs),
-			Value: l.typeFromData(t.Value, namedIDs),
+			Key:   l.typeFromData(t.Key, nil),
+			Value: l.typeFromData(t.Value, nil),
 		}
 	case *types.Type_Enum:
-		return l.enumTypeFromData(t, namedIDs)
+		return l.enumTypeFromData(t, parent)
 	case *types.Type_Struct:
-		return l.structTypeFromData(t, namedIDs)
+		return l.structTypeFromData(t, parent)
 	}
 	panic("unreached")
 }

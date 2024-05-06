@@ -15,13 +15,13 @@ type TypeNameEditor struct {
 	typed  *TypeEditor
 }
 
-func NewTypeNameEditor(parent Focuser, typ *types.TypeName, loader *types.Loader) *TypeNameEditor {
+func NewTypeNameEditor(parent Focuser, typ *types.TypeName, core *Core) *TypeNameEditor {
 	n := &TypeNameEditor{
 		parent: parent,
 		typ:    typ,
 		named:  newEditor(),
 	}
-	n.typed = NewTypeNameTypeEditor(&typ.Type, loader)
+	n.typed = NewTypeNameTypeEditor(typ, core)
 	n.named.SetText(typ.Name)
 	return n
 }

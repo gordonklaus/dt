@@ -270,7 +270,11 @@ func (w *cWriter) typ(t types.Type) string {
 		if _, ok := t.Package.(types.PackageID_Current); ok {
 			pkg = w.currentPkg.Name
 		}
-		return snake(pkg) + "__" + snake(t.TypeName.Name)
+		name := snake(t.TypeName.Name)
+		if tn, ok := t.TypeName.Parent.(*types.TypeName); ok {
+			name = snake(tn.Name) + "__" + name
+		}
+		return snake(pkg) + "__" + name
 	}
 	panic("unreached")
 }

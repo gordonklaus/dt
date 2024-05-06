@@ -13,13 +13,13 @@ type MapTypeEditor struct {
 	key, value *TypeEditor
 }
 
-func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, loader *types.Loader) *MapTypeEditor {
+func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, core *Core) *MapTypeEditor {
 	m := &MapTypeEditor{
 		parent: parent,
 		typ:    typ,
 	}
-	m.key = NewMapKeyTypeEditor(&typ.Key, loader)
-	m.value = NewTypeEditor(&typ.Value, loader)
+	m.key = NewMapKeyTypeEditor(&typ.Key, core)
+	m.value = NewTypeEditor(&typ.Value, core)
 	return m
 }
 

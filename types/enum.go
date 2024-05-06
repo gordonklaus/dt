@@ -8,10 +8,10 @@ type EnumType struct {
 
 type EnumElemType = TypeName
 
-func (l *Loader) enumTypeFromData(t *types.Type_Enum, namedIDs map[*NamedType]uint64) *EnumType {
+func (l *packageLoader) enumTypeFromData(t *types.Type_Enum, parent any) *EnumType {
 	typ := &EnumType{Elems: make([]*EnumElemType, len(t.Elements))}
 	for i, e := range t.Elements {
-		typ.Elems[i] = l.typeNameFromData(e, namedIDs)
+		typ.Elems[i] = l.typeNameFromData(e, parent)
 	}
 	return typ
 }

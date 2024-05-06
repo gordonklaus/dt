@@ -1,3 +1,5 @@
+- Enforce compatibility:
+	- When deleting an item that has not just been added (in this commit, or on this branch (configurable)), deprecate the item instead.
 - Add a ByteAlign[T] type that inserts enough bits to byte-align its value.
 	- Be explicit: insert zero or more ones followed by a zero so that the reader can validate alignment.
 	- Benchmark: how much does this speed up reading large arrays?
@@ -11,5 +13,5 @@
 		- bits.Buffer.ReadString should follow the same strategy.
 		- The initial size can be based on the size of the remaining buffer to be read (and an error can be returned if this is exceeded).
 
+- In the TypeEditor menu, show enum elements under a submenu.
 - Add DisplayIndex to StructField and EnumElement (for documentation purposes only - serialization order is array order)?
-- typEd UI design idea:  lay out types just as they would be positioned in a text format (indented lines of text) and with similar keyboard navigation, for familiarity's sake

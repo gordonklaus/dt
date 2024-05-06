@@ -14,8 +14,9 @@ import (
 )
 
 type TypeEditor struct {
-	typ    *types.Type
-	loader *types.Loader
+	*Core
+	typ      *types.Type
+	typeName *types.TypeName
 
 	KeyFocus
 	menuFocus   KeyFocus
@@ -36,8 +37,9 @@ type typeEditor interface {
 	Layout(gtx C) D
 }
 
-func NewTypeNameTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(typ, loader)
+func NewTypeNameTypeEditor(typ *types.TypeName, core *Core) *TypeEditor {
+	t := newTypeEditor(&typ.Type, core)
+	t.typeName = typ
 	t.items = []*typeMenuItem{
 		{txt: "struct", new: func() types.Type { return &types.StructType{} }},
 		{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
@@ -45,8 +47,8 @@ func NewTypeNameTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	return t
 }
 
-func NewMapKeyTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(typ, loader)
+func NewMapKeyTypeEditor(typ *types.Type, core *Core) *TypeEditor {
+	t := newTypeEditor(typ, core)
 	t.items = []*typeMenuItem{
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
 		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
@@ -57,8 +59,8 @@ func NewMapKeyTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 	return t
 }
 
-func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
-	t := newTypeEditor(typ, loader)
+func NewTypeEditor(typ *types.Type, core *Core) *TypeEditor {
+	t := newTypeEditor(typ, core)
 	t.items = []*typeMenuItem{
 		{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
 		{txt: "int", new: func() types.Type { return &types.IntType{} }},
@@ -70,21 +72,26 @@ func NewTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
 		{txt: "map", new: func() types.Type { return &types.MapType{} }},
 		{txt: "option", new: func() types.Type { return &types.OptionType{} }},
 	}
-	pkg, _ := loader.Load(types.PackageID_Current{})
-	for _, n := range pkg.Types {
-		n := n
+	for _, n := range t.Pkg.Types {
 		t.items = append(t.items, &typeMenuItem{txt: n.Name, new: func() types.Type {
 			return &types.NamedType{Package: types.PackageID_Current{}, TypeName: n}
 		}})
+		if e, ok := n.Type.(*types.EnumType); ok {
+			for _, el := range e.Elems {
+				t.items = append(t.items, &typeMenuItem{txt: n.Name + "." + el.Name, new: func() types.Type {
+					return &types.NamedType{Package: types.PackageID_Current{}, TypeName: el}
+				}})
+			}
+		}
 	}
 	return t
 }
 
-func newTypeEditor(typ *types.Type, loader *types.Loader) *TypeEditor {
+func newTypeEditor(typ *types.Type, core *Core) *TypeEditor {
 	t := &TypeEditor{
-		typ:    typ,
-		loader: loader,
-		menu:   layout.List{Axis: layout.Vertical},
+		typ:  typ,
+		Core: core,
+		menu: layout.List{Axis: layout.Vertical},
 	}
 	t.ed = t.newEditor(*typ)
 	return t
@@ -103,15 +110,15 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 	case *types.StringType:
 		return NewStringTypeEditor(typ)
 	case *types.StructType:
-		return NewStructTypeEditor(t, typ, t.loader)
+		return NewStructTypeEditor(t, typ, t.Core)
 	case *types.EnumType:
-		return NewEnumTypeEditor(t, typ, t.loader)
+		return NewEnumTypeEditor(t, typ, t.Core)
 	case *types.ArrayType:
-		return NewArrayTypeEditor(t, typ, t.loader)
+		return NewArrayTypeEditor(t, typ, t.Core)
 	case *types.MapType:
-		return NewMapTypeEditor(t, typ, t.loader)
+		return NewMapTypeEditor(t, typ, t.Core)
 	case *types.OptionType:
-		return NewOptionTypeEditor(t, typ, t.loader)
+		return NewOptionTypeEditor(t, typ, t.Core)
 	case *types.NamedType:
 		return NewNamedTypeEditor(typ)
 	}
@@ -185,8 +192,11 @@ events:
 }
 
 func (t *TypeEditor) layoutMenu(gtx C) D {
+	gtx.Constraints.Max = image.Pt(1e6, 1e6)
 	if t.menuFocus.Focused(gtx) {
 		m := op.Record(gtx.Ops)
+		itemHeight := Record(gtx.Disabled(), func(gtx C) D { return t.layoutMenuItem(gtx, 0) }).Dims.Size.Y
+		op.Offset(image.Pt(0, -(1+t.focusedItem)*(gtx.Dp(8)+itemHeight))).Add(gtx.Ops)
 		layout.Stack{}.Layout(gtx,
 			layout.Expanded(func(gtx C) D {
 				r := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4))

@@ -39,24 +39,30 @@ func (l *Loader) Load(id PackageID) (*Package, error) {
 		return nil, fmt.Errorf("%d bytes remaining after reading package", bb.Len())
 	}
 
-	namedIDs := map[*NamedType]uint64{}
-	p := l.packageFromData(pkg, namedIDs)
+	ldr := packageLoader{l, nil, map[*NamedType]uint64{}}
+	p := ldr.packageFromData(pkg)
 	if err := ValidatePackage(p); err != nil {
 		return nil, err
 	}
 	l.Packages[id] = p
-	for nt, id := range namedIDs {
+	for nt, id := range ldr.namedIDs {
 		p, err := l.Load(nt.Package)
 		if err != nil {
 			return nil, err
 		}
-		nt.TypeName = p.Type(id)
+		nt.TypeName = p.TypesByID[id]
 		if nt.TypeName == nil {
 			return nil, fmt.Errorf("package %s has no type with ID %d", p.Name, id)
 		}
 	}
 
 	return p, nil
+}
+
+type packageLoader struct {
+	*Loader
+	pkg      *Package
+	namedIDs map[*NamedType]uint64
 }
 
 func (l *Loader) Store(id PackageID) error {

@@ -8,10 +8,10 @@ type StructType struct {
 
 type StructFieldType = TypeName
 
-func (l *Loader) structTypeFromData(t *types.Type_Struct, namedIDs map[*NamedType]uint64) *StructType {
+func (l *packageLoader) structTypeFromData(t *types.Type_Struct, parent any) *StructType {
 	typ := &StructType{Fields: make([]*StructFieldType, len(t.Fields))}
 	for i, f := range t.Fields {
-		typ.Fields[i] = l.typeNameFromData(f, namedIDs)
+		typ.Fields[i] = l.typeNameFromData(f, parent)
 	}
 	return typ
 }

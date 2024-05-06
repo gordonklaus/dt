@@ -18,5 +18,9 @@ func NewNamedTypeEditor(typ *types.NamedType) *NamedTypeEditor {
 func (n *NamedTypeEditor) Type() types.Type { return n.typ }
 
 func (n *NamedTypeEditor) Layout(gtx C) D {
-	return material.Body1(theme, n.typ.TypeName.Name).Layout(gtx)
+	txt := n.typ.TypeName.Name
+	if tn, ok := n.typ.TypeName.Parent.(*types.TypeName); ok {
+		txt = tn.Name + "." + txt
+	}
+	return material.Body1(theme, txt).Layout(gtx)
 }

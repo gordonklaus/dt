@@ -39,7 +39,8 @@ func newFloat64Type() *FloatType { return &FloatType{Size: 64} }
 func newStringType() *StringType { return &StringType{} }
 
 func testType(t *testing.T, src Type) {
-	l := Loader{}
+	setParents(src, nil)
+	l := packageLoader{&Loader{}, &Package{TypesByID: map[uint64]*TypeName{}}, map[*NamedType]uint64{}}
 	srctyp := l.typeToData(src)
 	e := bits.NewEncoder()
 	srctyp.Write(e)
@@ -55,5 +56,19 @@ func testType(t *testing.T, src Type) {
 	dst := l.typeFromData(dsttyp, nil)
 	if !reflect.DeepEqual(src, dst) {
 		t.Fatalf("Types are not equal:\nsrc = %#v\ndst = %#v", src, dst)
+	}
+}
+
+func setParents(t Type, p any) {
+	switch t := t.(type) {
+	case *EnumType:
+		for _, e := range t.Elems {
+			e.Parent = p
+			setParents(e.Type, e)
+		}
+	case *StructType:
+		for _, f := range t.Fields {
+			f.Parent = p
+		}
 	}
 }

@@ -12,11 +12,11 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
+	"golang.org/x/exp/maps"
 )
 
 type PackageEditor struct {
-	pkg    *types.Package
-	loader *types.Loader
+	*Core
 
 	KeyFocus
 	list        layout.List
@@ -24,18 +24,19 @@ type PackageEditor struct {
 	ed          *TypeNameEditor
 }
 
-func NewPackageEditor(pkg *types.Package, loader *types.Loader) *PackageEditor {
+func NewPackageEditor(core *Core) *PackageEditor {
 	ed := &PackageEditor{
-		pkg:    pkg,
-		loader: loader,
+		Core: core,
 		list: layout.List{
 			Axis: layout.Vertical,
 		},
 	}
-	if len(pkg.Types) == 0 {
-		pkg.Types = []*types.TypeName{{}}
+	if len(ed.Pkg.Types) == 0 {
+		n := &types.TypeName{Parent: ed.Pkg}
+		ed.Pkg.Types = []*types.TypeName{n}
+		ed.Pkg.TypesByID[n.ID] = n
 	}
-	ed.ed = NewTypeNameEditor(ed, pkg.Types[0], loader)
+	ed.ed = NewTypeNameEditor(ed, ed.Pkg.Types[0], core)
 	return ed
 }
 
@@ -52,7 +53,7 @@ func (ed *PackageEditor) Layout(gtx C) D {
 		switch e := e.(type) {
 		case key.Event:
 			if e.Name == "S" {
-				if err := ed.loader.Store(types.PackageID_Current{}); err != nil {
+				if err := ed.Loader.Store(types.PackageID_Current{}); err != nil {
 					log.Println(err)
 				}
 			}
@@ -72,46 +73,60 @@ events:
 			if ed.focusedType > 0 {
 				ed.focusedType--
 				if e.Modifiers == key.ModShift {
-					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType+1] = ed.pkg.Types[ed.focusedType+1], ed.pkg.Types[ed.focusedType]
+					ed.Pkg.Types[ed.focusedType], ed.Pkg.Types[ed.focusedType+1] = ed.Pkg.Types[ed.focusedType+1], ed.Pkg.Types[ed.focusedType]
 				} else {
-					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+					ed.ed = NewTypeNameEditor(ed, ed.Pkg.Types[ed.focusedType], ed.Core)
 				}
 			}
 		case ed.Event(gtx, &e, 0, key.ModShift, "↓"):
-			if ed.focusedType < len(ed.pkg.Types)-1 {
+			if ed.focusedType < len(ed.Pkg.Types)-1 {
 				ed.focusedType++
 				if e.Modifiers == key.ModShift {
-					ed.pkg.Types[ed.focusedType], ed.pkg.Types[ed.focusedType-1] = ed.pkg.Types[ed.focusedType-1], ed.pkg.Types[ed.focusedType]
+					ed.Pkg.Types[ed.focusedType], ed.Pkg.Types[ed.focusedType-1] = ed.Pkg.Types[ed.focusedType-1], ed.Pkg.Types[ed.focusedType]
 				} else {
-					ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+					ed.ed = NewTypeNameEditor(ed, ed.Pkg.Types[ed.focusedType], ed.Core)
 				}
 			}
 		case ed.Event(gtx, &e, 0, key.ModShift, "⏎", "⌤"):
-			n := &types.TypeName{ID: nextID(ed.pkg)}
-			if e.Modifiers != key.ModShift && len(ed.pkg.Types) > 0 {
+			n := &types.TypeName{ID: nextID(ed.Pkg), Parent: ed.Pkg}
+			if e.Modifiers != key.ModShift && len(ed.Pkg.Types) > 0 {
 				ed.focusedType++
 			}
-			ed.pkg.Types = slices.Insert(ed.pkg.Types, ed.focusedType, n)
-			ed.ed = NewTypeNameEditor(ed, n, ed.loader)
+			ed.Pkg.Types = slices.Insert(ed.Pkg.Types, ed.focusedType, n)
+			ed.Pkg.TypesByID[n.ID] = n
+			ed.ed = NewTypeNameEditor(ed, n, ed.Core)
 			ed.ed.Focus(gtx)
 		case ed.Event(gtx, &e, 0, key.ModShift, "⌫", "⌦"):
 			// TODO: Check if this type is referenced elsewhere and, if so, ask the user if they want to delete those references.
-			if len(ed.pkg.Types) == 1 {
-				ed.pkg.Types = []*types.TypeName{{}}
-				ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[0], ed.loader)
+			switch ed := ed.ed.typed.ed.(type) {
+			case *StructTypeEditor:
+				for len(ed.fields) > 0 {
+					ed.deleteField(gtx, ed.fields[0], true)
+				}
+			case *EnumTypeEditor:
+				for len(ed.elems) > 0 {
+					ed.deleteElem(gtx, ed.elems[0], true)
+				}
+			}
+			delete(ed.Pkg.TypesByID, ed.Pkg.Types[ed.focusedType].ID)
+			if len(ed.Pkg.Types) == 1 {
+				n := &types.TypeName{Parent: ed.Pkg}
+				ed.Pkg.Types = []*types.TypeName{n}
+				ed.Pkg.TypesByID[n.ID] = n
+				ed.ed = NewTypeNameEditor(ed, n, ed.Core)
 				ed.ed.Focus(gtx)
 				break
 			}
-			ed.pkg.Types = slices.Delete(ed.pkg.Types, ed.focusedType, ed.focusedType+1)
-			if e.Name == "⌫" && e.Modifiers == 0 && ed.focusedType > 0 || ed.focusedType == len(ed.pkg.Types) {
+			ed.Pkg.Types = slices.Delete(ed.Pkg.Types, ed.focusedType, ed.focusedType+1)
+			if e.Name == "⌫" && e.Modifiers == 0 && ed.focusedType > 0 || ed.focusedType == len(ed.Pkg.Types) {
 				ed.focusedType--
 			}
-			ed.ed = NewTypeNameEditor(ed, ed.pkg.Types[ed.focusedType], ed.loader)
+			ed.ed = NewTypeNameEditor(ed, ed.Pkg.Types[ed.focusedType], ed.Core)
 		}
 	}
 
 	listRec := Record(gtx, func(gtx C) D {
-		return ed.list.Layout(gtx, len(ed.pkg.Types), ed.layoutTypeName)
+		return ed.list.Layout(gtx, len(ed.Pkg.Types), ed.layoutTypeName)
 	})
 	edRec := Record(gtx, ed.ed.Layout)
 
@@ -139,30 +154,14 @@ func (ed *PackageEditor) layoutTypeName(gtx C, i int) D {
 		}),
 		layout.Stacked(func(gtx C) D {
 			return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
-				return material.Body1(theme, ed.pkg.Types[i].Name).Layout(gtx)
+				return material.Body1(theme, ed.Pkg.Types[i].Name).Layout(gtx)
 			})
 		}),
 	)
 }
 
 func nextID(p *types.Package) uint64 {
-	var ids []uint64
-	for _, tn := range p.Types {
-		ids = append(ids, tn.ID)
-		switch t := tn.Type.(type) {
-		case *types.EnumType:
-			for _, e := range t.Elems {
-				ids = append(ids, e.ID)
-				for _, f := range e.Type.(*types.StructType).Fields {
-					ids = append(ids, f.ID)
-				}
-			}
-		case *types.StructType:
-			for _, f := range t.Fields {
-				ids = append(ids, f.ID)
-			}
-		}
-	}
+	ids := maps.Keys(p.TypesByID)
 	slices.Sort(ids)
 	var id uint64
 	for i := range ids {
