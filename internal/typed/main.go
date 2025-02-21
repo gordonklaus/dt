@@ -2,6 +2,7 @@ package typed
 
 import (
 	"fmt"
+	"os"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -29,7 +30,8 @@ func Edit(loader *types.Loader, pkg *types.Package) {
 }
 
 func edit(loader *types.Loader, pkg *types.Package) {
-	w := app.NewWindow(app.Title("typEd"))
+	var w app.Window
+	w.Option(app.Title("typEd"))
 	w.Perform(system.ActionMaximize)
 
 	ed := NewPackageEditor(&Core{
@@ -39,7 +41,7 @@ func edit(loader *types.Loader, pkg *types.Package) {
 
 	var ops op.Ops
 	for {
-		switch e := w.NextEvent().(type) {
+		switch e := w.Event().(type) {
 		case app.FrameEvent:
 			ops.Reset()
 			gtx := app.NewContext(&ops, e)
@@ -54,6 +56,7 @@ func edit(loader *types.Loader, pkg *types.Package) {
 			if e.Err != nil {
 				fmt.Println(e.Err)
 			}
+			os.Exit(0)
 		}
 	}
 }
