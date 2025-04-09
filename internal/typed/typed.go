@@ -6,30 +6,20 @@ import (
 	"gioui.org/font"
 	"gioui.org/io/key"
 	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/op/clip"
-	"gioui.org/op/paint"
 	"gioui.org/widget/material"
 	"github.com/gordonklaus/dt/types"
 )
 
 type TypeEditor struct {
 	*Core
-	typ      *types.Type
-	typeName *types.TypeName
+	typ          *types.Type
+	typeName     *types.TypeName
+	mapKeyEditor bool
 
 	KeyFocus
-	menuFocus   KeyFocus
-	menu        layout.List
-	items       []*typeMenuItem
-	focusedItem int
+	menu *Menu
 
 	ed typeEditor
-}
-
-type typeMenuItem struct {
-	txt string
-	new func() types.Type
 }
 
 type typeEditor interface {
@@ -38,60 +28,22 @@ type typeEditor interface {
 }
 
 func NewTypeNameTypeEditor(typ *types.TypeName, core *Core) *TypeEditor {
-	t := newTypeEditor(&typ.Type, core)
+	t := NewTypeEditor(&typ.Type, core)
 	t.typeName = typ
-	t.items = []*typeMenuItem{
-		{txt: "struct", new: func() types.Type { return &types.StructType{} }},
-		{txt: "enum", new: func() types.Type { return &types.EnumType{} }},
-	}
 	return t
 }
 
 func NewMapKeyTypeEditor(typ *types.Type, core *Core) *TypeEditor {
-	t := newTypeEditor(typ, core)
-	t.items = []*typeMenuItem{
-		{txt: "int", new: func() types.Type { return &types.IntType{} }},
-		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
-		{txt: "float32", new: func() types.Type { return &types.FloatType{Size: 32} }},
-		{txt: "float64", new: func() types.Type { return &types.FloatType{Size: 64} }},
-		{txt: "string", new: func() types.Type { return &types.StringType{} }},
-	}
+	t := NewTypeEditor(typ, core)
+	t.mapKeyEditor = true
 	return t
 }
 
 func NewTypeEditor(typ *types.Type, core *Core) *TypeEditor {
-	t := newTypeEditor(typ, core)
-	t.items = []*typeMenuItem{
-		{txt: "bool", new: func() types.Type { return &types.BoolType{} }},
-		{txt: "int", new: func() types.Type { return &types.IntType{} }},
-		{txt: "uint", new: func() types.Type { return &types.IntType{Unsigned: true} }},
-		{txt: "float32", new: func() types.Type { return &types.FloatType{Size: 32} }},
-		{txt: "float64", new: func() types.Type { return &types.FloatType{Size: 64} }},
-		{txt: "string", new: func() types.Type { return &types.StringType{} }},
-		{txt: "array", new: func() types.Type { return &types.ArrayType{} }},
-		{txt: "map", new: func() types.Type { return &types.MapType{} }},
-		{txt: "option", new: func() types.Type { return &types.OptionType{} }},
-	}
-	for _, n := range t.Pkg.Types {
-		t.items = append(t.items, &typeMenuItem{txt: n.Name, new: func() types.Type {
-			return &types.NamedType{Package: types.PackageID_Current{}, TypeName: n}
-		}})
-		if e, ok := n.Type.(*types.EnumType); ok {
-			for _, el := range e.Elems {
-				t.items = append(t.items, &typeMenuItem{txt: n.Name + "." + el.Name, new: func() types.Type {
-					return &types.NamedType{Package: types.PackageID_Current{}, TypeName: el}
-				}})
-			}
-		}
-	}
-	return t
-}
-
-func newTypeEditor(typ *types.Type, core *Core) *TypeEditor {
 	t := &TypeEditor{
 		typ:  typ,
 		Core: core,
-		menu: layout.List{Axis: layout.Vertical},
+		menu: NewMenu(core),
 	}
 	t.ed = t.newEditor(*typ)
 	return t
@@ -126,7 +78,36 @@ func (t *TypeEditor) newEditor(typ types.Type) typeEditor {
 }
 
 func (t *TypeEditor) Edit(gtx C) {
-	t.menuFocus.Focus(gtx)
+	t.menu.Items = nil
+	if t.typeName != nil {
+		t.menu.Add("struct", &types.StructType{})
+		t.menu.Add("enum", &types.EnumType{})
+	} else if t.mapKeyEditor {
+		t.menu.Add("int", &types.IntType{})
+		t.menu.Add("uint", &types.IntType{Unsigned: true})
+		t.menu.Add("float32", &types.FloatType{Size: 32})
+		t.menu.Add("float64", &types.FloatType{Size: 64})
+		t.menu.Add("string", &types.StringType{})
+	} else {
+		t.menu.Add("bool", &types.BoolType{})
+		t.menu.Add("int", &types.IntType{})
+		t.menu.Add("uint", &types.IntType{Unsigned: true})
+		t.menu.Add("float32", &types.FloatType{Size: 32})
+		t.menu.Add("float64", &types.FloatType{Size: 64})
+		t.menu.Add("string", &types.StringType{})
+		t.menu.Add("array", &types.ArrayType{})
+		t.menu.Add("map", &types.MapType{})
+		t.menu.Add("option", &types.OptionType{})
+		for _, n := range t.Pkg.Types {
+			t.menu.Add(n.Name, &types.NamedType{Package: types.PackageID_Current{}, TypeName: n})
+			if e, ok := n.Type.(*types.EnumType); ok {
+				for _, el := range e.Elems {
+					t.menu.Add(n.Name+"."+el.Name, &types.NamedType{Package: types.PackageID_Current{}, TypeName: el})
+				}
+			}
+		}
+	}
+	t.menu.Focus(gtx)
 }
 
 func (t *TypeEditor) Layout(gtx C) D {
@@ -146,10 +127,22 @@ events:
 		}
 	}
 
-	t.updateMenu(gtx)
+	switch e := t.menu.Update(gtx).(type) {
+	case MenuSubmitEvent:
+		t.ed = t.newEditor(e.Item.Value.(types.Type))
+		*t.typ = t.ed.Type()
+		t.Focus(gtx)
+	case MenuCancelEvent:
+		t.Focus(gtx)
+	}
 
-	return layout.Stack{Alignment: layout.SE}.Layout(gtx,
+	// Both the menu and the editor must be laid out, or they will never take the focus.
+	return layout.Stack{}.Layout(gtx,
+		layout.Stacked(t.menu.Layout),
 		layout.Stacked(func(gtx C) D {
+			if t.menu.Focused(gtx) {
+				gtx.Constraints.Max = image.Point{}
+			}
 			if t.ed != nil {
 				return t.KeyFocus.Layout(gtx, t.ed.Layout)
 			}
@@ -157,77 +150,5 @@ events:
 			lbl.Font.Style = font.Italic
 			return lbl.Layout(gtx)
 		}),
-		layout.Stacked(t.layoutMenu),
 	)
-}
-
-func (t *TypeEditor) updateMenu(gtx C) {
-events:
-	for {
-		var e key.Event
-		switch {
-		default:
-			break events
-		case t.menuFocus.FocusEvent(gtx):
-		case t.menuFocus.Event(gtx, &e, 0, 0, "↑"):
-			if t.focusedItem > 0 {
-				t.focusedItem--
-			}
-		case t.menuFocus.Event(gtx, &e, 0, 0, "↓"):
-			if t.focusedItem < len(t.items)-1 {
-				t.focusedItem++
-			}
-		case t.menuFocus.Event(gtx, &e, 0, 0, "⏎", "⌤"):
-			t.ed = t.newEditor(t.items[t.focusedItem].new())
-			*t.typ = t.ed.Type()
-			if ed, ok := t.ed.(Focuser); ok {
-				ed.Focus(gtx)
-			} else {
-				t.Focus(gtx)
-			}
-		case t.menuFocus.Event(gtx, &e, 0, 0, "⎋"):
-			t.Focus(gtx)
-		}
-	}
-}
-
-func (t *TypeEditor) layoutMenu(gtx C) D {
-	gtx.Constraints.Max = image.Pt(1e6, 1e6)
-	if t.menuFocus.Focused(gtx) {
-		m := op.Record(gtx.Ops)
-		itemHeight := Record(gtx.Disabled(), func(gtx C) D { return t.layoutMenuItem(gtx, 0) }).Dims.Size.Y
-		op.Offset(image.Pt(0, -(1+t.focusedItem)*(gtx.Dp(8)+itemHeight))).Add(gtx.Ops)
-		layout.Stack{}.Layout(gtx,
-			layout.Expanded(func(gtx C) D {
-				r := clip.UniformRRect(image.Rectangle{Max: gtx.Constraints.Min}, gtx.Dp(4))
-				paint.FillShape(gtx.Ops, theme.Bg, r.Op(gtx.Ops))
-				paint.FillShape(gtx.Ops, theme.Fg,
-					clip.Stroke{
-						Path:  r.Path(gtx.Ops),
-						Width: 1,
-					}.Op(),
-				)
-				return D{Size: gtx.Constraints.Min}
-			}),
-			layout.Stacked(func(gtx C) D {
-				return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
-					return t.menu.Layout(gtx, len(t.items), func(gtx C, i int) D {
-						return layout.UniformInset(4).Layout(gtx, func(gtx C) D {
-							return t.layoutMenuItem(gtx, i)
-						})
-					})
-				})
-			}),
-		)
-		op.Defer(gtx.Ops, m.Stop())
-	}
-	return D{}
-}
-
-func (t *TypeEditor) layoutMenuItem(gtx C, i int) D {
-	w := material.Body1(theme, t.items[i].txt).Layout
-	if i == t.focusedItem {
-		return t.menuFocus.Layout(gtx, w)
-	}
-	return w(gtx)
 }
