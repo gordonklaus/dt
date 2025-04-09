@@ -95,7 +95,7 @@ events:
 			ed.Pkg.Types = slices.Insert(ed.Pkg.Types, ed.focusedType, n)
 			ed.Pkg.TypesByID[n.ID] = n
 			ed.ed = NewTypeNameEditor(ed, n, ed.Core)
-			ed.ed.Focus(gtx)
+			ed.ed.named.Edit(gtx)
 		case ed.Event(gtx, &e, 0, key.ModShift, "⌫", "⌦"):
 			// TODO: Check if this type is referenced elsewhere and, if so, ask the user if they want to delete those references.
 			switch ed := ed.ed.typed.ed.(type) {

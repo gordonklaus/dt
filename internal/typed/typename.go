@@ -21,10 +21,12 @@ func NewTypeNameEditor(parent Focuser, typ *types.TypeName, core *Core) *TypeNam
 		typ:    typ,
 		named:  newEditor(),
 	}
-	n.typed = NewTypeNameTypeEditor(typ, core)
+	n.typed = NewTypeNameTypeEditor(n, typ, core)
 	n.named.SetText(typ.Name)
 	return n
 }
+
+func (n *TypeNameEditor) CreateNext(gtx C, after *TypeEditor) {}
 
 func (n *TypeNameEditor) Focus(gtx C) {
 	n.named.Focus(gtx)
@@ -61,7 +63,11 @@ nevents:
 		case widget.SubmitEvent:
 			if validName(e.Text) {
 				n.typ.Name = e.Text
-				n.Focus(gtx)
+				if n.typ.Type == nil {
+					n.typed.Edit(gtx)
+				} else {
+					n.Focus(gtx)
+				}
 			}
 		}
 	}
@@ -78,12 +84,6 @@ tevents:
 		case n.typed.Event(gtx, &e, 0, 0, "→", "↓"):
 			n.typed.ed.(Focuser).Focus(gtx)
 		}
-	}
-
-	if n.typ.Name == "" {
-		n.named.Edit(gtx)
-	} else if n.typ.Type == nil {
-		n.typed.Edit(gtx)
 	}
 
 	axis := layout.Vertical

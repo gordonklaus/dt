@@ -36,6 +36,8 @@ func NewEnumTypeEditor(parent *TypeEditor, typ *types.EnumType, core *Core) *Enu
 
 func (e *EnumTypeEditor) Type() types.Type { return e.typ }
 
+func (e *EnumTypeEditor) CreateNext(gtx C, after *TypeEditor) { e.Focus(gtx) }
+
 func (e *EnumTypeEditor) Focus(gtx C) {
 	if len(e.elems) == 0 {
 		e.insertElem(gtx, nil, false)

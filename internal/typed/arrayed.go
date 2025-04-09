@@ -18,11 +18,19 @@ func NewArrayTypeEditor(parent *TypeEditor, typ *types.ArrayType, core *Core) *A
 		parent: parent,
 		typ:    typ,
 	}
-	a.elem = NewTypeEditor(&typ.Elem, core)
+	a.elem = NewTypeEditor(a, &typ.Elem, core)
 	return a
 }
 
 func (a *ArrayTypeEditor) Type() types.Type { return a.typ }
+
+func (a *ArrayTypeEditor) CreateNext(gtx C, after *TypeEditor) {
+	if after == nil {
+		a.elem.Edit(gtx)
+	} else {
+		a.parent.CreateNext(gtx, a)
+	}
+}
 
 func (a *ArrayTypeEditor) Focus(gtx C) {
 	a.elem.Focus(gtx)
@@ -38,16 +46,6 @@ events:
 		case a.elem.FocusEvent(gtx):
 		case a.elem.Event(gtx, &e, 0, 0, "←"):
 			a.parent.Focus(gtx)
-		}
-	}
-
-	if a.typ.Elem == nil {
-		if a.elem.Focused(gtx) {
-			*a.parent.typ = nil
-			a.parent.ed = nil
-			a.parent.Edit(gtx)
-		} else {
-			a.elem.Edit(gtx)
 		}
 	}
 

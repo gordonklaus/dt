@@ -12,9 +12,11 @@ import (
 
 type TypeEditor struct {
 	*Core
+	parent       Editor
 	typ          *types.Type
 	typeName     *types.TypeName
 	mapKeyEditor bool
+	creating     bool
 
 	KeyFocus
 	menu *Menu
@@ -22,28 +24,33 @@ type TypeEditor struct {
 	ed typeEditor
 }
 
+type Editor interface {
+	CreateNext(gtx C, after *TypeEditor)
+}
+
 type typeEditor interface {
 	Type() types.Type
 	Layout(gtx C) D
 }
 
-func NewTypeNameTypeEditor(typ *types.TypeName, core *Core) *TypeEditor {
-	t := NewTypeEditor(&typ.Type, core)
+func NewTypeNameTypeEditor(parent Editor, typ *types.TypeName, core *Core) *TypeEditor {
+	t := NewTypeEditor(parent, &typ.Type, core)
 	t.typeName = typ
 	return t
 }
 
-func NewMapKeyTypeEditor(typ *types.Type, core *Core) *TypeEditor {
-	t := NewTypeEditor(typ, core)
+func NewMapKeyTypeEditor(parent Editor, typ *types.Type, core *Core) *TypeEditor {
+	t := NewTypeEditor(parent, typ, core)
 	t.mapKeyEditor = true
 	return t
 }
 
-func NewTypeEditor(typ *types.Type, core *Core) *TypeEditor {
+func NewTypeEditor(parent Editor, typ *types.Type, core *Core) *TypeEditor {
 	t := &TypeEditor{
-		typ:  typ,
-		Core: core,
-		menu: NewMenu(core),
+		parent: parent,
+		typ:    typ,
+		Core:   core,
+		menu:   NewMenu(core),
 	}
 	t.ed = t.newEditor(*typ)
 	return t
@@ -132,6 +139,7 @@ events:
 		t.ed = t.newEditor(e.Item.Value.(types.Type))
 		*t.typ = t.ed.Type()
 		t.Focus(gtx)
+		t.CreateNext(gtx, nil)
 	case MenuCancelEvent:
 		t.Focus(gtx)
 	}
@@ -151,4 +159,20 @@ events:
 			return lbl.Layout(gtx)
 		}),
 	)
+}
+
+func (t *TypeEditor) CreateNext(gtx C, after typeEditor) {
+	if after == nil {
+		t.creating = true
+	}
+	if !t.creating {
+		return
+	}
+
+	if ed, ok := t.ed.(Editor); ok && after == nil {
+		ed.CreateNext(gtx, nil)
+	} else {
+		t.creating = false
+		t.parent.CreateNext(gtx, t)
+	}
 }

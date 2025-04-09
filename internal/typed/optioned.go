@@ -18,11 +18,19 @@ func NewOptionTypeEditor(parent *TypeEditor, typ *types.OptionType, core *Core) 
 		parent: parent,
 		typ:    typ,
 	}
-	o.elem = NewTypeEditor(&typ.Elem, core)
+	o.elem = NewTypeEditor(o, &typ.Elem, core)
 	return o
 }
 
 func (o *OptionTypeEditor) Type() types.Type { return o.typ }
+
+func (o *OptionTypeEditor) CreateNext(gtx C, after *TypeEditor) {
+	if after == nil {
+		o.elem.Edit(gtx)
+	} else {
+		o.parent.CreateNext(gtx, o)
+	}
+}
 
 func (o *OptionTypeEditor) Focus(gtx C) {
 	o.elem.Focus(gtx)
@@ -38,16 +46,6 @@ events:
 		case o.elem.FocusEvent(gtx):
 		case o.elem.Event(gtx, &e, 0, 0, "←"):
 			o.parent.Focus(gtx)
-		}
-	}
-
-	if o.typ.Elem == nil {
-		if o.elem.Focused(gtx) {
-			*o.parent.typ = nil
-			o.parent.ed = nil
-			o.parent.Edit(gtx)
-		} else {
-			o.elem.Edit(gtx)
 		}
 	}
 

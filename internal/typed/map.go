@@ -18,12 +18,26 @@ func NewMapTypeEditor(parent *TypeEditor, typ *types.MapType, core *Core) *MapTy
 		parent: parent,
 		typ:    typ,
 	}
-	m.key = NewMapKeyTypeEditor(&typ.Key, core)
-	m.value = NewTypeEditor(&typ.Value, core)
+	m.key = NewMapKeyTypeEditor(m, &typ.Key, core)
+	m.value = NewTypeEditor(m, &typ.Value, core)
 	return m
 }
 
 func (m *MapTypeEditor) Type() types.Type { return m.typ }
+
+func (m *MapTypeEditor) CreateNext(gtx C, after *TypeEditor) {
+	if !m.parent.creating {
+		return
+	}
+
+	if after == nil {
+		m.key.Edit(gtx)
+	} else if after == m.key {
+		m.value.Edit(gtx)
+	} else {
+		m.parent.CreateNext(gtx, m)
+	}
+}
 
 func (m *MapTypeEditor) Focus(gtx C) {
 	m.key.Focus(gtx)
@@ -53,24 +67,6 @@ vevents:
 		case m.value.FocusEvent(gtx):
 		case m.value.Event(gtx, &e, 0, 0, "←"):
 			m.key.Focus(gtx)
-		}
-	}
-
-	if m.typ.Key == nil {
-		if m.key.Focused(gtx) {
-			*m.parent.typ = nil
-			m.parent.ed = nil
-			m.parent.Edit(gtx)
-		} else {
-			m.key.Edit(gtx)
-		}
-	} else if m.typ.Value == nil {
-		if m.key.Focused(gtx) {
-			m.value.Edit(gtx)
-		} else if m.value.Focused(gtx) {
-			*m.key.typ = nil
-			m.key.ed = nil
-			m.key.Edit(gtx)
 		}
 	}
 

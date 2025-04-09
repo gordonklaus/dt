@@ -37,6 +37,8 @@ func NewStructTypeEditor(parent Focuser, typ *types.StructType, core *Core) *Str
 
 func (s *StructTypeEditor) Type() types.Type { return s.typ }
 
+func (s *StructTypeEditor) CreateNext(gtx C, after *TypeEditor) { s.Focus(gtx) }
+
 func (s *StructTypeEditor) Focus(gtx C) {
 	if len(s.fields) == 0 {
 		s.insertField(gtx, nil, false)
@@ -173,10 +175,12 @@ func NewStructFieldTypeEditor(parent *StructTypeEditor, typ *types.StructFieldTy
 		typ:    typ,
 		named:  newEditor(),
 	}
-	f.typed = NewTypeEditor(&typ.Type, core)
+	f.typed = NewTypeEditor(f, &typ.Type, core)
 	f.named.SetText(typ.Name)
 	return f
 }
+
+func (f *StructFieldTypeEditor) CreateNext(gtx C, after *TypeEditor) { f.Focus(gtx) }
 
 func (f *StructFieldTypeEditor) Update(gtx C) {
 events:
@@ -276,10 +280,6 @@ tevents:
 				f.parent.focusNext(gtx, f, e.Name == "↓")
 			}
 		}
-	}
-
-	if f.typ.Type == nil && f.typed.Focused(gtx) {
-		f.named.Edit(gtx)
 	}
 }
 
